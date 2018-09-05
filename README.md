@@ -30,6 +30,8 @@ Working examples can be found in [the developer docs](http://prebid.org/dev-docs
     $ npm install
 
 *Note:* You need to have `NodeJS` 4.x or greater installed.
+*Note:* Because we have transitioned to using gulp 4.0 - you need to have `gulp-cli` installed globally prior to running the general `npm install`.  Run the following command to perform the install: `npm install gulp-cli -g`
+If you have a previous version of `gulp` installed globally, you'll need to remove it before installing `gulp-cli`.  This removal can be done with the command: `npm rm gulp -g`
 
 *Note:* In the 1.24.0 release of Prebid.js we have transitioned to using gulp 4.0 from using gulp 3.9.1.  To compily with gulp's recommended setup for 4.0, you'll need to have `gulp-cli` installed globally prior to running the general `npm install`.  This shouldn't impact any other projects you may work on that use an earlier version of gulp in it's setup.
 
