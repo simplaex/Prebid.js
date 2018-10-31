@@ -3,7 +3,7 @@ import includes from 'core-js/library/fn/array/includes';
 import adapter from 'src/AnalyticsAdapter';
 import CONSTANTS from 'src/constants.json';
 import adaptermanager from 'src/adaptermanager';
-import { logInfo, generateUUID } from 'src/utils';
+import { logInfo, generateUUID, timestamp } from 'src/utils';
 
 const analyticsType = 'endpoint';
 const DEFAULT_HOST = 'tracker.rivr.simplaex.com';
@@ -23,7 +23,7 @@ let rivrAnalytics = Object.assign(adapter({analyticsType}), {
           rivrAnalytics.context.queue.init();
         }
         if (rivrAnalytics.context.auctionObject) {
-          rivrAnalytics.context.auctionObject = fulfillAuctionObject();
+          rivrAnalytics.context.auctionObject = createNewAuctionObject();
           saveUnoptimisedParams();
           fetchLocalization();
         }
@@ -56,7 +56,7 @@ export function sendAuction() {
     removeEmptyProperties(rivrAnalytics.context.auctionObject);
     let auctionObject = rivrAnalytics.context.auctionObject;
     let req = Object.assign({}, {Auction: auctionObject});
-    rivrAnalytics.context.auctionObject = fulfillAuctionObject();
+    rivrAnalytics.context.auctionObject = createNewAuctionObject();
     logInfo('sending request to analytics => ', req);
     ajax(
       `http://${rivrAnalytics.context.host}/${rivrAnalytics.context.clientID}/auctions`,
@@ -158,12 +158,10 @@ export function setAuctionAbjectPosition(position) {
 }
 
 function getPlatformType() {
-  if (navigator.userAgent.match(/mobile/i)) {
-    return 'Mobile';
-  } else if (navigator.userAgent.match(/iPad|Android|Touch/i)) {
-    return 'Tablet';
+  if (navigator.userAgent.match(/mobile/i) || navigator.userAgent.match(/iPad|Android|Touch/i)) {
+    return 1;
   } else {
-    return 'Desktop';
+    return 2;
   }
 };
 
@@ -314,68 +312,122 @@ function addHandlers(bannersIds) {
   })
 };
 
-function fulfillAuctionObject() {
-  let newAuction = {
-    id: null,
-    timestamp: null,
-    at: null,
-    bcat: [],
-    imp: [],
-    app: {
-      id: null,
-      name: null,
-      domain: window.location.href,
-      bundle: null,
-      cat: [],
-      publisher: {
-        id: null,
-        name: null
-      }
+export function createNewAuctionObject() {
+  const auction = {
+    id: '',
+    publisher: rivrAnalytics.context.clientID,
+    blockedCategories: [''],
+    timestamp: timestamp(),
+    user: {
+      id: ''
     },
     site: {
-      id: null,
-      name: null,
-      domain: window.location.href,
-      cat: [],
-      publisher: {
-        id: null,
-        name: null
-      }
+      domain: window.location.host,
+      page: window.location.pathname,
+      categories: ['']
     },
+    impressions: [
+      {
+        id: '',
+        adSpotId: '',
+        adType: '',
+        bidFloor: 0.0,
+        acceptedSizes: [
+          {
+            h: 0,
+            w: 0
+          }
+        ],
+        banner: {
+          h: 0,
+          w: 0,
+          pos: ''
+        },
+      }
+    ],
+    bidders: [
+      {
+        id: '',
+        bids: [
+          {
+            adomain: [''],
+            clearPrice: 0.0,
+            impId: '',
+            price: 0.0,
+            status: 0
+          }
+        ]
+      }
+    ],
     device: {
-      geo: {
-        city: null,
-        country: null,
-        region: null,
-        zip: null,
-        type: null,
-        metro: null
-      },
-      devicetype: getPlatformType(),
-      osv: null,
-      os: null,
-      model: null,
-      make: null,
-      carrier: null,
-      ip: null,
-      didsha1: null,
-      dpidmd5: null,
-      ext: {
-        uid: null
-      }
-    },
-    user: {
-      id: null,
-      yob: null,
-      gender: null,
-    },
-    bidResponses: [],
-    bidRequests: [],
-    'ext.rivr.optimiser': localStorage.getItem('rivr_should_optimise') || 'unoptimised',
-    modelVersion: localStorage.getItem('rivr_model_version') || null,
-    'ext.rivr.originalvalues': []
-  };
-  return newAuction;
+      userAgent: navigator.userAgent,
+      browser: '',
+      deviceType: getPlatformType()
+    }
+  }
+
+  return auction;
+
+  // let newAuction = {
+  //   id: null,
+  //   timestamp: null,
+  //   at: null,
+  //   bcat: [],
+  //   imp: [],
+  //   app: {
+  //     id: null,
+  //     name: null,
+  //     domain: window.location.href,
+  //     bundle: null,
+  //     cat: [],
+  //     publisher: {
+  //       id: null,
+  //       name: null
+  //     }
+  //   },
+  //   site: {
+  //     id: null,
+  //     name: null,
+  //     domain: window.location.href,
+  //     cat: [],
+  //     publisher: {
+  //       id: null,
+  //       name: null
+  //     }
+  //   },
+  //   device: {
+  //     geo: {
+  //       city: null,
+  //       country: null,
+  //       region: null,
+  //       zip: null,
+  //       type: null,
+  //       metro: null
+  //     },
+  //     devicetype: getPlatformType(),
+  //     osv: null,
+  //     os: null,
+  //     model: null,
+  //     make: null,
+  //     carrier: null,
+  //     ip: null,
+  //     didsha1: null,
+  //     dpidmd5: null,
+  //     ext: {
+  //       uid: null
+  //     }
+  //   },
+  //   user: {
+  //     id: null,
+  //     yob: null,
+  //     gender: null,
+  //   },
+  //   bidResponses: [],
+  //   bidRequests: [],
+  //   'ext.rivr.optimiser': localStorage.getItem('rivr_should_optimise') || 'unoptimised',
+  //   modelVersion: localStorage.getItem('rivr_model_version') || null,
+  //   'ext.rivr.originalvalues': []
+  // };
 };
 
 function saveUnoptimisedParams() {
@@ -528,7 +580,6 @@ rivrAnalytics.enableAnalytics = (config) => {
   }
   rivrAnalytics.context = {
     host: config.options.host || DEFAULT_HOST,
-    pubId: config.options.pubId,
     auctionObject: {},
     adUnits: copiedUnits,
     clientID: config.options.clientID,

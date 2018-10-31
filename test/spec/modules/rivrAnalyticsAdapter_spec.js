@@ -9,6 +9,7 @@ import {
   dataLoaderForHandler,
   pinHandlerToHTMLElement,
   setAuctionAbjectPosition,
+  createNewAuctionObject,
 } from 'modules/rivrAnalyticsAdapter';
 import {expect} from 'chai';
 import adaptermanager from 'src/adaptermanager';
@@ -21,6 +22,7 @@ describe('RIVR Analytics adapter', () => {
   const EXPIRING_QUEUE_TIMEOUT = 4000;
   const EXPIRING_QUEUE_TIMEOUT_MOCK = 100;
   const PUBLISHER_ID_MOCK = 777;
+  const RVR_CLIENT_ID_MOCK = 'aCliendId';
   const EMITTED_AUCTION_ID = 1;
   const TRACKER_BASE_URL_MOCK = 'tracker.rivr.simplaex.com';
   let sandbox;
@@ -43,6 +45,7 @@ describe('RIVR Analytics adapter', () => {
     adaptermanager.enableAnalytics({
       provider: 'rivr',
       options: {
+        clientID: RVR_CLIENT_ID_MOCK,
         pubId: PUBLISHER_ID_MOCK,
         adUnits: [utils.deepClone(AD_UNITS_MOCK)]
       }
@@ -545,6 +548,20 @@ describe('RIVR Analytics adapter', () => {
     setAuctionAbjectPosition(POSITION_MOCK);
 
     expect(analyticsAdapter.context.auctionObject.device.geo.lat).to.be.equal('aLatitude');
+  });
+
+  it.only('createNewAuctionObject(), it creates a new auction object', () => {
+    const MILLIS_FROM_EPOCH_TO_NOW_MOCK = 123456;
+    timer.tick(MILLIS_FROM_EPOCH_TO_NOW_MOCK);
+
+    const result = createNewAuctionObject();
+
+    expect(result.device.deviceType).to.be.equal(2);
+    expect(result.publisher).to.be.equal(RVR_CLIENT_ID_MOCK);
+    expect(result.device.userAgent).to.be.equal(navigator.userAgent);
+    expect(result.timestamp).to.be.equal(MILLIS_FROM_EPOCH_TO_NOW_MOCK);
+    expect(result.site.domain.substring(0, 9)).to.be.equal('localhost');
+    expect(result.site.page).to.be.equal('/context.html');
   });
 
   const AD_UNITS_MOCK = [
