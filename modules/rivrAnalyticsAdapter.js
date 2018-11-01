@@ -30,12 +30,14 @@ let rivrAnalytics = Object.assign(adapter({analyticsType}), {
         }
         handler = trackAuctionInit;
         break;
-      case CONSTANTS.EVENTS.BID_REQUESTED:
-        handler = trackBidRequest;
-        break;
-      case CONSTANTS.EVENTS.BID_RESPONSE:
-        handler = trackBidResponse;
-        break;
+      // TODO remove this. args object will be also found in AUCTION_END event -> args.bidderRequests[i]
+      // case CONSTANTS.EVENTS.BID_REQUESTED:
+      //   handler = trackBidRequest;
+      //   break;
+      // TODO remove this. args object will be also found in AUCTION_END event -> args.bidsReceived[i]
+      // case CONSTANTS.EVENTS.BID_RESPONSE:
+      //   handler = trackBidResponse;
+      //   break;
       case CONSTANTS.EVENTS.BID_WON:
         handler = trackBidWon;
         break;
@@ -100,14 +102,15 @@ function trackAuctionInit(args) {
 };
 
 function trackBidRequest(args) {
-  setCurrentPublisherId(args);
-  let bidRequest = args;
-  rivrAnalytics.context.auctionObject.bidRequests.push(bidRequest);
+  // TODO remove this. args object will be also found in AUCTION_END event -> args.bidderRequests[i]
+  // let bidRequest = args;
+  // rivrAnalytics.context.auctionObject.bidRequests.push(bidRequest);
 };
 
 function trackBidResponse(args) {
-  let bidResponse = createBidResponse(args);
-  rivrAnalytics.context.auctionObject.bidResponses.push(bidResponse);
+  // TODO remove this. args object will be also found in AUCTION_END event -> args.bidsReceived[i]
+  // let bidResponse = createBidResponse(args);
+  // rivrAnalytics.context.auctionObject.bidResponses.push(bidResponse);
 };
 
 function trackBidWon(args) {
@@ -124,21 +127,6 @@ function trackAuctionEnd(args) {
 
 function trackBidTimeout(args) {
   return [args];
-};
-
-function setCurrentPublisherId(bidRequested) {
-  let site = rivrAnalytics.context.auctionObject.site;
-  let app = rivrAnalytics.context.auctionObject.app;
-  let pubId = rivrAnalytics.context.pubId;
-  if (!site.publisher.id || app.publisher.id) {
-    if (pubId) {
-      site.publisher.id = pubId;
-      app.publisher.id = pubId;
-    } else {
-      site.publisher.id = bidRequested.bids[0].crumbs.pubcid;
-      app.publisher.id = bidRequested.bids[0].crumbs.pubcid;
-    }
-  }
 };
 
 export function fetchLocalization() {
