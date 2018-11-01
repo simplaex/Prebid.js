@@ -10,6 +10,7 @@ import {
   pinHandlerToHTMLElement,
   setAuctionAbjectPosition,
   createNewAuctionObject,
+  connectAllUnits,
 } from 'modules/rivrAnalyticsAdapter';
 import {expect} from 'chai';
 import adaptermanager from 'src/adaptermanager';
@@ -23,8 +24,10 @@ describe('RIVR Analytics adapter', () => {
   const EXPIRING_QUEUE_TIMEOUT_MOCK = 100;
   const PUBLISHER_ID_MOCK = 777;
   const RVR_CLIENT_ID_MOCK = 'aCliendId';
+  const SITE_CATEGORIES_MOCK = ['cat1', 'cat2'];
   const EMITTED_AUCTION_ID = 1;
   const TRACKER_BASE_URL_MOCK = 'tracker.rivr.simplaex.com';
+  const UUID_REG_EXP = new RegExp('[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}', 'i');
   let sandbox;
   let ajaxStub;
   let timer;
@@ -47,7 +50,8 @@ describe('RIVR Analytics adapter', () => {
       options: {
         clientID: RVR_CLIENT_ID_MOCK,
         pubId: PUBLISHER_ID_MOCK,
-        adUnits: [utils.deepClone(AD_UNITS_MOCK)]
+        adUnits: [utils.deepClone(BANNER_AD_UNITS_MOCK)],
+        siteCategories: SITE_CATEGORIES_MOCK,
       }
     });
   });
@@ -97,6 +101,10 @@ describe('RIVR Analytics adapter', () => {
 
     expect(analyticsAdapter.context).to.have.property('host', TRACKER_BASE_URL_MOCK);
     expect(analyticsAdapter.context).to.have.property('pubId', PUBLISHER_ID_MOCK);
+  });
+
+  it.only('enableAnalytics - should set a cookie containing a user id', () => {
+    expect(UUID_REG_EXP.test(analyticsAdapter.context.userId)).to.equal(true);
   });
 
   it('Firing AUCTION_INIT should set auction id of context when AUCTION_INIT event is fired', () => {
@@ -562,9 +570,20 @@ describe('RIVR Analytics adapter', () => {
     expect(result.timestamp).to.be.equal(MILLIS_FROM_EPOCH_TO_NOW_MOCK);
     expect(result.site.domain.substring(0, 9)).to.be.equal('localhost');
     expect(result.site.page).to.be.equal('/context.html');
+    expect(result.site.categories).to.be.equal(SITE_CATEGORIES_MOCK);
   });
 
-  const AD_UNITS_MOCK = [
+  it('connectAllUnits(), returns a flattened array with all banner and video adunits', () => {
+    const allAdUnits = [BANNER_AD_UNITS_MOCK, VIDEO_AD_UNITS_MOCK];
+
+    const result = connectAllUnits(allAdUnits);
+
+    expect(result.length).to.be.eql(2);
+    expect(result[0].code).to.be.eql('banner-container1');
+    expect(result[1].code).to.be.eql('video');
+  });
+
+  const BANNER_AD_UNITS_MOCK = [
     {
       code: 'banner-container1',
       mediaTypes: {
@@ -589,6 +608,35 @@ describe('RIVR Analytics adapter', () => {
       ]
     }
   ];
+
+  const VIDEO_AD_UNITS_MOCK = [
+    {
+      code: 'video',
+      mediaTypes: {
+        video: {
+          context: 'outstream',
+          sizes: [[640, 360], [640, 480]]
+        }
+      },
+      bids: [
+        {
+          bidder: "vuble",
+          params: {
+            env: 'net',
+            pubId: '18',
+            zoneId: '12345',
+            referrer: "http://www.vuble.tv/", // optional
+            floorPrice: 5.00 // optional
+          }
+        },
+        {
+          bidder: 'vertamedia',
+          params: {
+            aid: 331133
+          }
+        }
+      ]
+    }];
 
   const REQUEST = {
     bidderCode: 'adapter',

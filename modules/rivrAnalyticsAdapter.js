@@ -6,6 +6,7 @@ import adaptermanager from 'src/adaptermanager';
 import { logInfo, generateUUID, timestamp } from 'src/utils';
 
 const analyticsType = 'endpoint';
+const rivrUsrIdCookieKey = 'rvr_usr_id';
 const DEFAULT_HOST = 'tracker.rivr.simplaex.com';
 const DEFAULT_QUEUE_TIMEOUT = 4000;
 
@@ -24,7 +25,7 @@ let rivrAnalytics = Object.assign(adapter({analyticsType}), {
         }
         if (rivrAnalytics.context.auctionObject) {
           rivrAnalytics.context.auctionObject = createNewAuctionObject();
-          saveUnoptimisedParams();
+          saveUnoptimisedAdUnits();
           fetchLocalization();
         }
         handler = trackAuctionInit;
@@ -319,12 +320,12 @@ export function createNewAuctionObject() {
     blockedCategories: [''],
     timestamp: timestamp(),
     user: {
-      id: ''
+      id: rivrAnalytics.context.userId
     },
     site: {
       domain: window.location.host,
       page: window.location.pathname,
-      categories: ['']
+      categories: rivrAnalytics.context.siteCategories
     },
     impressions: [
       {
@@ -363,7 +364,8 @@ export function createNewAuctionObject() {
       userAgent: navigator.userAgent,
       browser: '',
       deviceType: getPlatformType()
-    }
+    },
+    'ext.rivr.originalvalues': []
   }
 
   return auction;
@@ -430,7 +432,7 @@ export function createNewAuctionObject() {
   // };
 };
 
-function saveUnoptimisedParams() {
+export function saveUnoptimisedAdUnits() {
   let units = rivrAnalytics.context.adUnits;
   if (units) {
     if (units.length > 0) {
@@ -448,7 +450,7 @@ function saveUnoptimisedParams() {
   }
 };
 
-function connectAllUnits(units) {
+export function connectAllUnits(units) {
   return units.reduce((acc, units) => {
     units.forEach((unit) => acc.push(unit))
     return acc
@@ -568,6 +570,16 @@ function removeEmptyProperties(obj) {
   });
 };
 
+function getCookie(name) {
+  var value = '; ' + document.cookie;
+  var parts = value.split('; ' + name + '=');
+  if (parts.length == 2) return parts.pop().split(';').shift();
+}
+
+function storeAndReturnRivrUsrIdCookie() {
+  return document.cookie = 'rvr_usr_id=' + generateUUID();
+}
+
 // save the base class function
 rivrAnalytics.originEnableAnalytics = rivrAnalytics.enableAnalytics;
 
@@ -579,9 +591,11 @@ rivrAnalytics.enableAnalytics = (config) => {
     copiedUnits = JSON.parse(stringifiedAdUnits);
   }
   rivrAnalytics.context = {
+    userId: getCookie(rivrUsrIdCookieKey) || storeAndReturnRivrUsrIdCookie(),
     host: config.options.host || DEFAULT_HOST,
     auctionObject: {},
     adUnits: copiedUnits,
+    siteCategories: config.options.siteCategories || [],
     clientID: config.options.clientID,
     authToken: config.options.authToken,
     queue: new ExpiringQueue(sendImpressions, sendAuction, config.options.queueTimeout || DEFAULT_QUEUE_TIMEOUT)
