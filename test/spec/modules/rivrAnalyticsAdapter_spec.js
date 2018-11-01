@@ -11,6 +11,7 @@ import {
   setAuctionAbjectPosition,
   createNewAuctionObject,
   connectAllUnits,
+  trackAuctionEnd,
 } from 'modules/rivrAnalyticsAdapter';
 import {expect} from 'chai';
 import adaptermanager from 'src/adaptermanager';
@@ -103,7 +104,7 @@ describe('RIVR Analytics adapter', () => {
     expect(analyticsAdapter.context).to.have.property('pubId', PUBLISHER_ID_MOCK);
   });
 
-  it.only('enableAnalytics - should set a cookie containing a user id', () => {
+  it('enableAnalytics - should set a cookie containing a user id', () => {
     expect(UUID_REG_EXP.test(analyticsAdapter.context.userId)).to.equal(true);
   });
 
@@ -558,7 +559,7 @@ describe('RIVR Analytics adapter', () => {
     expect(analyticsAdapter.context.auctionObject.device.geo.lat).to.be.equal('aLatitude');
   });
 
-  it.only('createNewAuctionObject(), it creates a new auction object', () => {
+  it('createNewAuctionObject(), it creates a new auction object', () => {
     const MILLIS_FROM_EPOCH_TO_NOW_MOCK = 123456;
     timer.tick(MILLIS_FROM_EPOCH_TO_NOW_MOCK);
 
@@ -581,6 +582,26 @@ describe('RIVR Analytics adapter', () => {
     expect(result.length).to.be.eql(2);
     expect(result[0].code).to.be.eql('banner-container1');
     expect(result[1].code).to.be.eql('video');
+  });
+
+  it.only('trackAuctionEnd(), populates the bidders array from bidderRequests and bidsReceived', () => {
+    trackAuctionEnd(AUCTION_END_EVENT_FOR_BIDDER_ARRAY_MOCK);
+
+    const result = analyticsAdapter.context.auctionObject.bidders;
+
+    expect(result.length).to.be.eql(3);
+
+    expect(result[0].id).to.be.eql('vuble');
+    expect(result[0].bids[0].price).to.be.eql(0);
+
+    expect(result[1].id).to.be.eql('vertamedia');
+    expect(result[1].bids[0].price).to.be.eql(0);
+
+    expect(result[2].id).to.be.eql('appnexus');
+    expect(result[2].bids[0].price).to.be.eql(0.5);
+    expect(result[2].bids[0].impId).to.be.eql('/19968336/header-bid-tag-0');
+    expect(result[2].bids[1].price).to.be.eql(0.7);
+    expect(result[2].bids[1].impId).to.be.eql('/19968336/header-bid-tag-1');
   });
 
   const BANNER_AD_UNITS_MOCK = [
@@ -620,12 +641,12 @@ describe('RIVR Analytics adapter', () => {
       },
       bids: [
         {
-          bidder: "vuble",
+          bidder: 'vuble',
           params: {
             env: 'net',
             pubId: '18',
             zoneId: '12345',
-            referrer: "http://www.vuble.tv/", // optional
+            referrer: 'http://www.vuble.tv/', // optional
             floorPrice: 5.00 // optional
           }
         },
@@ -763,5 +784,155 @@ describe('RIVR Analytics adapter', () => {
       modelVersion: null,
       'ext.rivr.originalvalues': []
     }
+  };
+
+  const AUCTION_END_EVENT_FOR_BIDDER_ARRAY_MOCK = {
+    auctionId: 'f6c1d093-14a3-4ade-bc7d-1de37e7cbdb2',
+    auctionStart: 1540560217395,
+    auctionEnd: 1540560217703,
+    auctionStatus: 'completed',
+    adUnitCodes: [
+      '/19968336/header-bid-tag-0',
+      '/19968336/header-bid-tag-1',
+      'video'
+    ],
+    bidderRequests: [
+      {
+        bidderCode: 'vuble',
+        auctionId: 'f6c1d093-14a3-4ade-bc7d-1de37e7cbdb2',
+        bidderRequestId: '1bb11e055665bc',
+        bids: [
+          {
+            bidder: 'vuble',
+            crumbs: {
+              pubcid: '87eb6b0e-e1a8-42a9-b58d-e93a382e2d9b'
+            },
+            adUnitCode: 'video',
+            transactionId: 'df11a105-4eef-4ceb-bbc3-a49224f7c49d',
+            bidId: '2859b890da7418',
+            bidderRequestId: '1bb11e055665bc',
+            auctionId: 'f6c1d093-14a3-4ade-bc7d-1de37e7cbdb2',
+            src: 'client',
+            bidRequestsCount: 1
+          }
+        ],
+        auctionStart: 1540560217395,
+        timeout: 3000,
+        refererInfo: {
+          referer: 'http: //localhost: 8080/',
+          reachedTop: true,
+          numIframes: 0,
+          stack: [
+            'http://localhost:8080/'
+          ]
+        },
+        start: 1540560217401,
+        doneCbCallCount: 0
+      },
+      {
+        bidderCode: 'vertamedia',
+        auctionId: 'f6c1d093-14a3-4ade-bc7d-1de37e7cbdb2',
+        bidderRequestId: '3c2cbf7f1466cb',
+        bids: [
+          {
+            bidder: 'vertamedia',
+            params: {
+              aid: 331133
+            },
+            crumbs: {
+              pubcid: '87eb6b0e-e1a8-42a9-b58d-e93a382e2d9b'
+            },
+            adUnitCode: 'video',
+            transactionId: 'df11a105-4eef-4ceb-bbc3-a49224f7c49d',
+            bidId: '45b3ad5c2dc794',
+            bidderRequestId: '3c2cbf7f1466cb',
+            auctionId: 'f6c1d093-14a3-4ade-bc7d-1de37e7cbdb2',
+            bidRequestsCount: 1
+          }
+        ],
+        auctionStart: 1540560217395,
+        timeout: 3000,
+        start: 1540560217401
+      },
+      {
+        bidderCode: 'appnexus',
+        auctionId: 'f6c1d093-14a3-4ade-bc7d-1de37e7cbdb2',
+        bidderRequestId: '5312eef4418cd7',
+        bids: [
+          {
+            bidder: 'appnexus',
+            params: {
+              placementId: 13144370
+            },
+            crumbs: {
+              pubcid: '87eb6b0e-e1a8-42a9-b58d-e93a382e2d9b'
+            },
+            adUnitCode: '/19968336/header-bid-tag-0',
+            transactionId: 'aee9bf8d-6d8f-425b-a42a-52c875371ebc',
+            bidId: '6de82e80757293',
+            bidderRequestId: '5312eef4418cd7',
+            auctionId: 'f6c1d093-14a3-4ade-bc7d-1de37e7cbdb2',
+            src: 'client',
+            bidRequestsCount: 1
+          },
+          {
+            bidder: 'appnexus',
+            params: {
+              placementId: 13144370
+            },
+            crumbs: {
+              pubcid: '87eb6b0e-e1a8-42a9-b58d-e93a382e2d9b'
+            },
+            adUnitCode: '/19968336/header-bid-tag-1',
+            transactionId: '3d5f0f89-e9cd-4714-b314-3f0fb7fcf8e3',
+            bidId: '7e1a45d85bd57c',
+            bidderRequestId: '5312eef4418cd7',
+            auctionId: 'f6c1d093-14a3-4ade-bc7d-1de37e7cbdb2',
+            src: 'client',
+            bidRequestsCount: 1
+          }
+        ],
+        auctionStart: 1540560217395,
+        timeout: 3000,
+        start: 1540560217403,
+        doneCbCallCount: 0
+      }
+    ],
+    bidsReceived: [
+      {
+        bidderCode: 'appnexus',
+        adId: '6de82e80757293',
+        mediaType: 'banner',
+        source: 'client',
+        requestId: '6de82e80757293',
+        cpm: 0.5,
+        creativeId: 96846035,
+        appnexus: {
+          buyerMemberId: 9325
+        },
+        auctionId: 'f6c1d093-14a3-4ade-bc7d-1de37e7cbdb2',
+        bidder: 'appnexus',
+        adUnitCode: '/19968336/header-bid-tag-0',
+      },
+      {
+        bidderCode: 'appnexus',
+        adId: '7e1a45d85bd57c',
+        mediaType: 'banner',
+        source: 'client',
+        requestId: '7e1a45d85bd57c',
+        cpm: 0.7,
+        creativeId: 96846035,
+        appnexus: {
+          buyerMemberId: 9325
+        },
+        auctionId: 'f6c1d093-14a3-4ade-bc7d-1de37e7cbdb2',
+        bidder: 'appnexus',
+        adUnitCode: '/19968336/header-bid-tag-1',
+      }
+    ],
+    winningBids: [
+
+    ],
+    timeout: 3000
   };
 });
