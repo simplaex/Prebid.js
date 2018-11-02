@@ -326,7 +326,7 @@ export function saveUnoptimisedAdUnits() {
   let units = rivrAnalytics.context.adUnits;
   if (units) {
     if (units.length > 0) {
-      let allUnits = connectAllUnits(units);
+      let allUnits = concatAllUnits(units);
       allUnits.forEach((adUnit) => {
         adUnit.bids.forEach((bid) => {
           let configForBidder = fetchConfigForBidder(bid.bidder);
@@ -340,11 +340,8 @@ export function saveUnoptimisedAdUnits() {
   }
 };
 
-export function connectAllUnits(units) {
-  return units.reduce((acc, units) => {
-    units.forEach((unit) => acc.push(unit))
-    return acc
-  }, []);
+export function concatAllUnits(units) {
+  return Array.prototype.concat.apply([], units);
 }
 
 export function createUnOptimisedParamsField(bid, config) {

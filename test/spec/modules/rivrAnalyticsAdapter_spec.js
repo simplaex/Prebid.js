@@ -10,7 +10,7 @@ import {
   pinHandlerToHTMLElement,
   setAuctionAbjectPosition,
   createNewAuctionObject,
-  connectAllUnits,
+  concatAllUnits,
   trackAuctionEnd,
 } from 'modules/rivrAnalyticsAdapter';
 import {expect} from 'chai';
@@ -465,10 +465,10 @@ describe('RIVR Analytics adapter', () => {
     expect(result.site.categories).to.be.equal(SITE_CATEGORIES_MOCK);
   });
 
-  it('connectAllUnits(), returns a flattened array with all banner and video adunits', () => {
+  it('concatAllUnits(), returns a flattened array with all banner and video adunits', () => {
     const allAdUnits = [BANNER_AD_UNITS_MOCK, VIDEO_AD_UNITS_MOCK];
 
-    const result = connectAllUnits(allAdUnits);
+    const result = concatAllUnits(allAdUnits);
 
     expect(result.length).to.be.eql(2);
     expect(result[0].code).to.be.eql('banner-container1');
