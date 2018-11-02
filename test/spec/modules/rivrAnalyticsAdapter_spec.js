@@ -584,8 +584,8 @@ describe('RIVR Analytics adapter', () => {
     expect(result[1].code).to.be.eql('video');
   });
 
-  it.only('trackAuctionEnd(), populates the bidders array from bidderRequests and bidsReceived', () => {
-    trackAuctionEnd(AUCTION_END_EVENT_FOR_BIDDER_ARRAY_MOCK);
+  it('trackAuctionEnd(), populates the bidders array from bidderRequests and bidsReceived', () => {
+    trackAuctionEnd(AUCTION_END_EVENT_WITH_BID_REQUESTS_AND_BID_RESPONSES_MOCK);
 
     const result = analyticsAdapter.context.auctionObject.bidders;
 
@@ -602,6 +602,26 @@ describe('RIVR Analytics adapter', () => {
     expect(result[2].bids[0].impId).to.be.eql('/19968336/header-bid-tag-0');
     expect(result[2].bids[1].price).to.be.eql(0.7);
     expect(result[2].bids[1].impId).to.be.eql('/19968336/header-bid-tag-1');
+  });
+
+  it.only('trackAuctionEnd(), populates the impressions array from adUnits', () => {
+    trackAuctionEnd(AUCTION_END_EVENT_WITH_AD_UNITS_AND_BID_RESPONSES_MOCK);
+
+    const result = analyticsAdapter.context.auctionObject.impressions;
+
+    expect(result.length).to.be.eql(3);
+
+    expect(result[0].id).to.be.eql('/19968336/header-bid-tag-0');
+    expect(result[0].adType).to.be.eql('banner');
+
+    expect(result[1].id).to.be.eql('/19968336/header-bid-tag-1');
+    expect(result[1].adType).to.be.eql('banner');
+    expect(result[1].acceptedSizes).to.be.eql([{w: 728, h: 90}, {w: 970, h: 250}]);
+    expect(result[1].banner).to.be.eql({w: 300, h: 250});
+
+    // expect(result[2].id).to.be.eql('video');
+    // expect(result[2].adType).to.be.eql('video');
+    // expect(result[2].acceptedSizes).to.be.eql([{w: 640, h: 360}, {w: 640, h: 480}]);
   });
 
   const BANNER_AD_UNITS_MOCK = [
@@ -786,11 +806,194 @@ describe('RIVR Analytics adapter', () => {
     }
   };
 
-  const AUCTION_END_EVENT_FOR_BIDDER_ARRAY_MOCK = {
+  const AUCTION_END_EVENT_WITH_AD_UNITS_AND_BID_RESPONSES_MOCK = {
+    auctionId:'f6c1d093-14a3-4ade-bc7d-1de37e7cbdb2',
+    auctionStart:1540560217395,
+    auctionEnd:1540560217703,
+    auctionStatus:'completed',
+    adUnits:[
+      {
+        code:'/19968336/header-bid-tag-0',
+        mediaTypes:{
+          banner:{
+            sizes:[
+              [
+                300,
+                250
+              ],
+              [
+                300,
+                600
+              ]
+            ]
+          }
+        },
+        bids:[
+          {
+            bidder:'appnexus',
+            params:{
+              placementId:13144370
+            },
+            crumbs:{
+              pubcid:'87eb6b0e-e1a8-42a9-b58d-e93a382e2d9b'
+            }
+          }
+        ],
+        transactionId:'aee9bf8d-6d8f-425b-a42a-52c875371ebc',
+        sizes:[
+          [
+            300,
+            250
+          ],
+          [
+            300,
+            600
+          ]
+        ]
+      },
+      {
+        code:'/19968336/header-bid-tag-1',
+        mediaTypes:{
+          banner:{
+            sizes:[
+              [
+                728,
+                90
+              ],
+              [
+                970,
+                250
+              ]
+            ]
+          }
+        },
+        bids:[
+          {
+            bidder:'appnexus',
+            params:{
+              placementId:13144370
+            },
+            crumbs:{
+              pubcid:'87eb6b0e-e1a8-42a9-b58d-e93a382e2d9b'
+            }
+          }
+        ],
+        transactionId:'3d5f0f89-e9cd-4714-b314-3f0fb7fcf8e3',
+        sizes:[
+          [
+            728,
+            90
+          ],
+          [
+            970,
+            250
+          ]
+        ]
+      },
+      {
+        code:'video',
+        mediaTypes:{
+          video:{
+            context:'outstream',
+            sizes:[
+              [
+                640,
+                360
+              ],
+              [
+                640,
+                480
+              ]
+            ]
+          }
+        },
+        bids:[
+          {
+            bidder:'vuble',
+            params:{
+              env:'net',
+              pubId:'18',
+              zoneId:'12345',
+              referrer:'http://www.vuble.tv/',
+              floorPrice:5
+            },
+            crumbs:{
+              pubcid:'87eb6b0e-e1a8-42a9-b58d-e93a382e2d9b'
+            }
+          },
+          {
+            bidder:'vertamedia',
+            params:{
+              aid:331133
+            },
+            crumbs:{
+              pubcid:'87eb6b0e-e1a8-42a9-b58d-e93a382e2d9b'
+            }
+          }
+        ],
+        transactionId:'df11a105-4eef-4ceb-bbc3-a49224f7c49d'
+      }
+    ],
+    adUnitCodes:[
+      '/19968336/header-bid-tag-0',
+      '/19968336/header-bid-tag-1',
+      'video'
+    ],
+    bidderRequests: [],
+    bidsReceived:[
+      {
+        bidderCode:'appnexus',
+        width:300,
+        height:250,
+        statusMessage:'Bid available',
+        adId:'6de82e80757293',
+        mediaType:'banner',
+        source:'client',
+        requestId:'6de82e80757293',
+        cpm:0.5,
+        creativeId:96846035,
+        currency:'USD',
+        netRevenue:true,
+        ttl:300,
+        appnexus:{
+          buyerMemberId:9325
+        },
+        ad:'...HTML CONTAINING THE AD...',
+        auctionId:'f6c1d093-14a3-4ade-bc7d-1de37e7cbdb2',
+        responseTimestamp:1540560217636,
+        requestTimestamp:1540560217403,
+        bidder:'appnexus',
+        adUnitCode:'/19968336/header-bid-tag-1',
+        timeToRespond:233,
+        pbLg:'0.50',
+        pbMg:'0.50',
+        pbHg:'0.50',
+        pbAg:'0.50',
+        pbDg:'0.50',
+        pbCg:'',
+        size:'728x90',
+        adserverTargeting:{
+          hb_bidder:'appnexus',
+          hb_adid:'7e1a45d85bd57c',
+          hb_pb:'0.50',
+          hb_size:'728x90',
+          hb_source:'client',
+          hb_format:'banner'
+        }
+      }
+    ],
+    winningBids:[
+
+    ],
+    timeout:3000
+  };
+
+  const AUCTION_END_EVENT_WITH_BID_REQUESTS_AND_BID_RESPONSES_MOCK = {
     auctionId: 'f6c1d093-14a3-4ade-bc7d-1de37e7cbdb2',
     auctionStart: 1540560217395,
     auctionEnd: 1540560217703,
     auctionStatus: 'completed',
+    bidders: [],
     adUnitCodes: [
       '/19968336/header-bid-tag-0',
       '/19968336/header-bid-tag-1',

@@ -122,14 +122,52 @@ function trackBidWon(args) {
 export function trackAuctionEnd(args) {
   rivrAnalytics.context.auctionTimeEnd = Date.now();
   rivrAnalytics.context.auctionObject.bidders = buildBiddersArrayFromAuctionEnd(args);
+  rivrAnalytics.context.auctionObject.impressions = buildImpressionsArrayFromAuctionEnd(args);
 };
 
-function buildBiddersArrayFromAuctionEnd(args) {
-  return args.bidderRequests.map((bidderRequest) => {
+function buildImpressionsArrayFromAuctionEnd(auctionEndEvent) {
+  return auctionEndEvent.adUnits.map((adUnit) => {
+      const impression = {};
+      impression.id = adUnit.code;
+      impression.adType = 'unknown';
+      impression.acceptedSizes = [];
+      const bidReceivedForThisAdUnit = auctionEndEvent.bidsReceived.find((bidReceived) => {
+        return adUnit.code === bidReceived.adUnitCode;
+      });
+    if (adUnit.mediaTypes) {
+        let acceptedSizes = [];
+        if (adUnit.mediaTypes.banner) {
+          buildAdTypeDependentFieldsForImpression(impression, 'banner', adUnit, bidReceivedForThisAdUnit);
+        } else if (adUnit.mediaTypes.video) {
+          buildAdTypeDependentFieldsForImpression(impression, 'video', adUnit, bidReceivedForThisAdUnit);
+        }
+      }
+      return impression;
+    });
+}
+
+function buildAdTypeDependentFieldsForImpression(impression, adType, adUnit, bidReceivedForThisAdUnit) {
+  impression.adType = adType;
+  impression.acceptedSizes = adUnit.mediaTypes[adType].sizes.map((acceptedSize) => {
+    return {
+      w: acceptedSize[0],
+      h: acceptedSize[1]
+    };
+  });
+  if (bidReceivedForThisAdUnit) {
+    impression[adType] = {
+      w: bidReceivedForThisAdUnit.width,
+      h: bidReceivedForThisAdUnit.height
+    };
+  }
+}
+
+function buildBiddersArrayFromAuctionEnd(auctionEndEvent) {
+  return auctionEndEvent.bidderRequests.map((bidderRequest) => {
     const bidder = {};
     bidder.id = bidderRequest.bidderCode;
     bidder.bids = bidderRequest.bids.map((bid) => {
-      const bidReceivedForThisRequest = args.bidsReceived.find((bidReceived) => {
+      const bidReceivedForThisRequest = auctionEndEvent.bidsReceived.find((bidReceived) => {
         return bidderRequest.bidderCode === bidReceived.bidderCode &&
           bid.bidId === bidReceived.adId &&
           bid.adUnitCode === bidReceived.adUnitCode;
