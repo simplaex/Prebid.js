@@ -29,14 +29,6 @@ let rivrAnalytics = Object.assign(adapter({analyticsType}), {
         }
         handler = trackAuctionInit;
         break;
-      // TODO remove this. args object will be also found in AUCTION_END event -> args.bidderRequests[i]
-      // case CONSTANTS.EVENTS.BID_REQUESTED:
-      //   handler = trackBidRequest;
-      //   break;
-      // TODO remove this. args object will be also found in AUCTION_END event -> args.bidsReceived[i]
-      // case CONSTANTS.EVENTS.BID_RESPONSE:
-      //   handler = trackBidResponse;
-      //   break;
       case CONSTANTS.EVENTS.BID_WON:
         handler = trackBidWon;
         break;
@@ -99,18 +91,6 @@ function trackAuctionInit(args) {
   rivrAnalytics.context.auctionTimeStart = Date.now();
   rivrAnalytics.context.auctionObject.id = args.auctionId;
 };
-
-// TODO remove this. args object will be also found in AUCTION_END event -> args.bidderRequests[i]
-// function trackBidRequest(args) {
-//   let bidRequest = args;
-//   rivrAnalytics.context.auctionObject.bidRequests.push(bidRequest);
-// };
-
-// TODO remove this. args object will be also found in AUCTION_END event -> args.bidsReceived[i]
-// function trackBidResponse(args) {
-//   let bidResponse = createBidResponse(args);
-//   rivrAnalytics.context.auctionObject.bidResponses.push(bidResponse);
-// };
 
 function trackBidWon(args) {
   setWinningBidStatus(args);
@@ -223,35 +203,6 @@ function getPlatformType() {
     return 2;
   }
 };
-
-// function createBidResponse(bidResponseEvent) {
-//   return {
-//     timestamp: bidResponseEvent.responseTimestamp,
-//     status: bidResponseEvent.getStatusCode(),
-//     total_duration: bidResponseEvent.timeToRespond,
-//     bidderId: null,
-//     bidder_name: bidResponseEvent.bidder,
-//     cur: bidResponseEvent.currency,
-//     seatbid: [
-//       {
-//         seat: null,
-//         bid: [
-//           {
-//             status: 2,
-//             clear_price: bidResponseEvent.cpm,
-//             attr: [],
-//             crid: bidResponseEvent.creativeId,
-//             cid: null,
-//             id: null,
-//             adid: bidResponseEvent.adId,
-//             adomain: [],
-//             iurl: null
-//           }
-//         ]
-//       }
-//     ]
-//   }
-// };
 
 export function reportClickEvent(event) {
   let link = event.currentTarget.getElementsByTagName('a')[0];
@@ -398,67 +349,6 @@ export function createNewAuctionObject() {
   }
 
   return auction;
-
-  // let newAuction = {
-  //   id: null,
-  //   timestamp: null,
-  //   at: null,
-  //   bcat: [],
-  //   imp: [],
-  //   app: {
-  //     id: null,
-  //     name: null,
-  //     domain: window.location.href,
-  //     bundle: null,
-  //     cat: [],
-  //     publisher: {
-  //       id: null,
-  //       name: null
-  //     }
-  //   },
-  //   site: {
-  //     id: null,
-  //     name: null,
-  //     domain: window.location.href,
-  //     cat: [],
-  //     publisher: {
-  //       id: null,
-  //       name: null
-  //     }
-  //   },
-  //   device: {
-  //     geo: {
-  //       city: null,
-  //       country: null,
-  //       region: null,
-  //       zip: null,
-  //       type: null,
-  //       metro: null
-  //     },
-  //     devicetype: getPlatformType(),
-  //     osv: null,
-  //     os: null,
-  //     model: null,
-  //     make: null,
-  //     carrier: null,
-  //     ip: null,
-  //     didsha1: null,
-  //     dpidmd5: null,
-  //     ext: {
-  //       uid: null
-  //     }
-  //   },
-  //   user: {
-  //     id: null,
-  //     yob: null,
-  //     gender: null,
-  //   },
-  //   bidResponses: [],
-  //   bidRequests: [],
-  //   'ext.rivr.optimiser': localStorage.getItem('rivr_should_optimise') || 'unoptimised',
-  //   modelVersion: localStorage.getItem('rivr_model_version') || null,
-  //   'ext.rivr.originalvalues': []
-  // };
 };
 
 export function saveUnoptimisedAdUnits() {
