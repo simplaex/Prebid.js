@@ -23,7 +23,6 @@ const events = require('../../../src/events');
 describe('RIVR Analytics adapter', () => {
   const EXPIRING_QUEUE_TIMEOUT = 4000;
   const EXPIRING_QUEUE_TIMEOUT_MOCK = 100;
-  const PUBLISHER_ID_MOCK = 777;
   const RVR_CLIENT_ID_MOCK = 'aCliendId';
   const SITE_CATEGORIES_MOCK = ['cat1', 'cat2'];
   const EMITTED_AUCTION_ID = 1;
@@ -50,7 +49,6 @@ describe('RIVR Analytics adapter', () => {
       provider: 'rivr',
       options: {
         clientID: RVR_CLIENT_ID_MOCK,
-        pubId: PUBLISHER_ID_MOCK,
         adUnits: [utils.deepClone(BANNER_AD_UNITS_MOCK)],
         siteCategories: SITE_CATEGORIES_MOCK,
       }
@@ -97,11 +95,11 @@ describe('RIVR Analytics adapter', () => {
     timer.tick(50);
   });
 
-  it('enableAnalytics - should configure host and pubId in adapter context', () => {
+  it.only('enableAnalytics - should configure host and clientID in adapter context', () => {
     // adaptermanager.enableAnalytics() is called in beforeEach. If only called here it doesn't seem to work.
 
     expect(analyticsAdapter.context).to.have.property('host', TRACKER_BASE_URL_MOCK);
-    expect(analyticsAdapter.context).to.have.property('pubId', PUBLISHER_ID_MOCK);
+    expect(analyticsAdapter.context).to.have.property('clientID', RVR_CLIENT_ID_MOCK);
   });
 
   it('enableAnalytics - should set a cookie containing a user id', () => {
@@ -150,79 +148,6 @@ describe('RIVR Analytics adapter', () => {
     expect(auctionObject3['modelVersion']).to.be.eql(null);
   });
 
-  it('Firing BID_REQUESTED it sets app and site publisher id in auction object', () => {
-    analyticsAdapter.context = utils.deepClone(CONTEXT_AFTER_AUCTION_INIT);
-
-    events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST);
-
-    const sitePubcid = analyticsAdapter.context.auctionObject.site.publisher.id;
-    const appPubcid = analyticsAdapter.context.auctionObject.app.publisher.id;
-    expect(sitePubcid).to.be.eql(PUBLISHER_ID_MOCK);
-    expect(appPubcid).to.be.eql(PUBLISHER_ID_MOCK);
-  });
-
-  it('Firing BID_REQUESTED it adds bid request in bid requests array', () => {
-    analyticsAdapter.context = utils.deepClone(CONTEXT_AFTER_AUCTION_INIT);
-
-    events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST);
-
-    const requestEvent = analyticsAdapter.context.auctionObject.bidRequests;
-    expect(requestEvent).to.have.length(1);
-    expect(requestEvent[0]).to.be.eql({
-      bidderCode: 'adapter',
-      auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
-      bidderRequestId: '1a6fc81528d0f6',
-      bids: [{
-        bidder: 'adapter',
-        params: {},
-        adUnitCode: 'container-1',
-        transactionId: 'de90df62-7fd0-4fbc-8787-92d133a7dc06',
-        sizes: [[300, 250]],
-        bidId: '208750227436c1',
-        bidderRequestId: '1a6fc81528d0f6',
-        auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f'
-      }],
-      auctionStart: 1509369418387,
-      timeout: 3000,
-      start: 1509369418389
-    });
-  });
-
-  it('Firing BID_RESPONSE it inserts bid response object in auctionObject', () => {
-    analyticsAdapter.context = utils.deepClone(CONTEXT_AFTER_AUCTION_INIT);
-
-    events.emit(CONSTANTS.EVENTS.BID_RESPONSE, BID_RESPONSE_MOCK);
-    const bidResponses = analyticsAdapter.context.auctionObject.bidResponses;
-
-    expect(bidResponses).to.have.length(1);
-    expect(bidResponses[0]).to.be.eql({
-      timestamp: 1509369418832,
-      status: 1,
-      'total_duration': 443,
-      bidderId: null,
-      'bidder_name': 'adapter',
-      cur: 'EU',
-      seatbid: [
-        {
-          seat: null,
-          bid: [
-            {
-              status: 2,
-              'clear_price': 0.015,
-              attr: [],
-              crid: 999,
-              cid: null,
-              id: null,
-              adid: '208750227436c1',
-              adomain: [],
-              iurl: null
-            }
-          ]
-        }
-      ]
-    });
-  });
-
   it('Firing AUCTION_END it sets auction time end to current time', () => {
     analyticsAdapter.context = utils.deepClone(CONTEXT_AFTER_AUCTION_INIT);
 
@@ -248,7 +173,7 @@ describe('RIVR Analytics adapter', () => {
     expect(responses[1].total_duration).to.be.eql(null);
   });
 
-  it.only('Firing BID_WON should set to 1 the status of the corresponding bid', () => {
+  it('Firing BID_WON should set to 1 the status of the corresponding bid', () => {
     analyticsAdapter.context.auctionObject = utils.deepClone(AUCTION_OBJECT_AFTER_AUCTION_END_MOCK);
 
     events.emit(CONSTANTS.EVENTS.BID_WON, BID_WON_MOCK);
@@ -798,7 +723,7 @@ describe('RIVR Analytics adapter', () => {
 
   const CONTEXT_AFTER_AUCTION_INIT = {
     host: TRACKER_BASE_URL_MOCK,
-    pubId: PUBLISHER_ID_MOCK,
+    clientID: RVR_CLIENT_ID_MOCK,
     queue: {
       mockProp: 'mockValue'
     },
