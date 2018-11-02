@@ -113,10 +113,22 @@ function trackAuctionInit(args) {
 // };
 
 function trackBidWon(args) {
+  setWinningBidStatus(args);
+};
+
+function setWinningBidStatus(args) {
   let auctionObject = rivrAnalytics.context.auctionObject;
-  let auctionImpression = createAuctionImpression(args);
-  auctionObject.imp.push(auctionImpression);
-  assignBidWonStatusToResponse(args);
+  const bidderObjectForThisWonBid = auctionObject.bidders.find((bidder) => {
+    return bidder.id === args.bidderCode;
+  });
+  if (bidderObjectForThisWonBid) {
+    const bidObjectForThisWonBid = bidderObjectForThisWonBid.bids.find((bid) => {
+      return bid.impId === args.adUnitCode;
+    });
+    if (bidObjectForThisWonBid) {
+      bidObjectForThisWonBid.status = 1;
+    }
+  }
 };
 
 export function trackAuctionEnd(args) {
@@ -127,23 +139,22 @@ export function trackAuctionEnd(args) {
 
 function buildImpressionsArrayFromAuctionEnd(auctionEndEvent) {
   return auctionEndEvent.adUnits.map((adUnit) => {
-      const impression = {};
-      impression.id = adUnit.code;
-      impression.adType = 'unknown';
-      impression.acceptedSizes = [];
-      const bidReceivedForThisAdUnit = auctionEndEvent.bidsReceived.find((bidReceived) => {
-        return adUnit.code === bidReceived.adUnitCode;
-      });
-    if (adUnit.mediaTypes) {
-        let acceptedSizes = [];
-        if (adUnit.mediaTypes.banner) {
-          buildAdTypeDependentFieldsForImpression(impression, 'banner', adUnit, bidReceivedForThisAdUnit);
-        } else if (adUnit.mediaTypes.video) {
-          buildAdTypeDependentFieldsForImpression(impression, 'video', adUnit, bidReceivedForThisAdUnit);
-        }
-      }
-      return impression;
+    const impression = {};
+    impression.id = adUnit.code;
+    impression.adType = 'unknown';
+    impression.acceptedSizes = [];
+    const bidReceivedForThisAdUnit = auctionEndEvent.bidsReceived.find((bidReceived) => {
+      return adUnit.code === bidReceived.adUnitCode;
     });
+    if (adUnit.mediaTypes) {
+      if (adUnit.mediaTypes.banner) {
+        buildAdTypeDependentFieldsForImpression(impression, 'banner', adUnit, bidReceivedForThisAdUnit);
+      } else if (adUnit.mediaTypes.video) {
+        buildAdTypeDependentFieldsForImpression(impression, 'video', adUnit, bidReceivedForThisAdUnit);
+      }
+    }
+    return impression;
+  });
 }
 
 function buildAdTypeDependentFieldsForImpression(impression, adType, adUnit, bidReceivedForThisAdUnit) {
@@ -241,23 +252,6 @@ function getPlatformType() {
 //     ]
 //   }
 // };
-
-function createAuctionImpression(bidWonEvent) {
-  return {
-    tagid: bidWonEvent.adUnitCode,
-    displaymanager: null,
-    displaymanagerver: null,
-    secure: null,
-    bidfloor: null,
-    banner: {
-      w: bidWonEvent.width,
-      h: bidWonEvent.height,
-      pos: null,
-      expandable: [],
-      api: []
-    }
-  }
-};
 
 export function reportClickEvent(event) {
   let link = event.currentTarget.getElementsByTagName('a')[0];
@@ -561,18 +555,6 @@ export function ExpiringQueue(sendImpressions, sendAuction, ttl, log) {
       }
     }, ttl);
   }
-};
-
-function assignBidWonStatusToResponse(wonBid) {
-  let wonBidId = wonBid.adId;
-  rivrAnalytics.context.auctionObject.bidResponses.forEach((response) => {
-    if (response.seatbid.length > 0) {
-      let bidObjectResponse = response.seatbid[0].bid[0];
-      if (wonBidId === bidObjectResponse.adid) {
-        bidObjectResponse.status = 1
-      }
-    }
-  });
 };
 
 function removeEmptyProperties(obj) {
