@@ -95,7 +95,7 @@ describe('RIVR Analytics adapter', () => {
     timer.tick(50);
   });
 
-  it.only('enableAnalytics - should configure host and clientID in adapter context', () => {
+  it('enableAnalytics - should configure host and clientID in adapter context', () => {
     // adaptermanager.enableAnalytics() is called in beforeEach. If only called here it doesn't seem to work.
 
     expect(analyticsAdapter.context).to.have.property('host', TRACKER_BASE_URL_MOCK);
@@ -160,17 +160,13 @@ describe('RIVR Analytics adapter', () => {
     expect(endTime).to.be.eql(MILLIS_FROM_EPOCH_TO_NOW_MOCK);
   });
 
-  it('Firing AUCTION_END when there are unresponded bid requests should insert then to bidResponses in auctionObject with null duration', () => {
+  it('Firing AUCTION_END populates impressions arrai in auction object', () => {
     analyticsAdapter.context = utils.deepClone(CONTEXT_AFTER_AUCTION_INIT);
 
-    events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST2);
-    events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST3);
-    events.emit(CONSTANTS.EVENTS.AUCTION_END, BID_RESPONSE_MOCK);
+    events.emit(CONSTANTS.EVENTS.AUCTION_END, AUCTION_END_EVENT_WITH_AD_UNITS_AND_BID_RESPONSES_MOCK);
 
-    const responses = analyticsAdapter.context.auctionObject.bidResponses;
-    expect(responses.length).to.be.eql(2);
-    expect(responses[0].total_duration).to.be.eql(null);
-    expect(responses[1].total_duration).to.be.eql(null);
+    const impressions = analyticsAdapter.context.auctionObject.impressions;
+    expect(impressions.length).to.be.eql(3);
   });
 
   it('Firing BID_WON should set to 1 the status of the corresponding bid', () => {
@@ -180,26 +176,12 @@ describe('RIVR Analytics adapter', () => {
 
     expect(analyticsAdapter.context.auctionObject.bidders.length).to.be.equal(3);
 
-    console.log('analyticsAdapter.context.auctionObject.bidders[0]', analyticsAdapter.context.auctionObject.bidders[0]);
-
     expect(analyticsAdapter.context.auctionObject.bidders[0].bids[0].status).to.be.equal(0);
 
     expect(analyticsAdapter.context.auctionObject.bidders[1].bids[0].status).to.be.equal(0);
 
     expect(analyticsAdapter.context.auctionObject.bidders[2].bids[0].status).to.be.equal(1);
     expect(analyticsAdapter.context.auctionObject.bidders[2].bids[1].status).to.be.equal(0);
-  });
-
-  it('Firing BID_WON when it happens after BID_RESPONSE should change the status of winning bidResponse to 1', () => {
-    const BID_STATUS_WON = 1;
-    analyticsAdapter.context = utils.deepClone(CONTEXT_AFTER_AUCTION_INIT);
-
-    events.emit(CONSTANTS.EVENTS.BID_RESPONSE, BID_RESPONSE_MOCK);
-    events.emit(CONSTANTS.EVENTS.BID_WON, BID_RESPONSE_MOCK);
-
-    const responseWhichIsWonAlso = analyticsAdapter.context.auctionObject.bidResponses[0];
-
-    expect(responseWhichIsWonAlso.seatbid[0].bid[0].status).to.be.eql(BID_STATUS_WON);
   });
 
   it('when auction is initialized and authToken is defined and ExpiringQueue ttl expires, it sends the auction', () => {
@@ -213,31 +195,23 @@ describe('RIVR Analytics adapter', () => {
     expect(ajaxStub.calledOnce).to.be.equal(true);
   });
 
-  it('when auction is initialized and authToken is defined and ExpiringQueue ttl expires, it clears imp, bidResponses and bidRequests', () => {
+  it('when auction is initialized and authToken is defined and ExpiringQueue ttl expires, it resets auctionObject', () => {
     events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {auctionId: EMITTED_AUCTION_ID, config: {}, timeout: 3000});
 
     analyticsAdapter.context.authToken = 'anAuthToken';
-    events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST);
-    events.emit(CONSTANTS.EVENTS.BID_RESPONSE, BID_RESPONSE_MOCK);
-    events.emit(CONSTANTS.EVENTS.BID_WON, BID_RESPONSE_MOCK);
+    events.emit(CONSTANTS.EVENTS.AUCTION_END, AUCTION_END_EVENT_WITH_AD_UNITS_AND_BID_RESPONSES_MOCK);
 
-    let impressions = analyticsAdapter.context.auctionObject.imp;
-    let responses = analyticsAdapter.context.auctionObject.bidResponses;
-    let requests = analyticsAdapter.context.auctionObject.bidRequests;
+    let impressions = analyticsAdapter.context.auctionObject.impressions;
 
-    expect(impressions.length).to.be.eql(1);
-    expect(responses.length).to.be.eql(1);
-    expect(requests.length).to.be.eql(1);
+    expect(impressions.length).to.be.eql(3);
 
     timer.tick(EXPIRING_QUEUE_TIMEOUT + 500);
 
-    let impressionsAfterSend = analyticsAdapter.context.auctionObject.imp;
-    let responsesAfterSend = analyticsAdapter.context.auctionObject.bidResponses;
-    let requestsAfterSend = analyticsAdapter.context.auctionObject.bidRequests;
+    let impressionsAfterSend = analyticsAdapter.context.auctionObject.impressions;
+    let biddersAfterSend = analyticsAdapter.context.auctionObject.bidders;
 
     expect(impressionsAfterSend.length).to.be.eql(0);
-    expect(responsesAfterSend.length).to.be.eql(0);
-    expect(requestsAfterSend.length).to.be.eql(0);
+    expect(biddersAfterSend.length).to.be.eql(0);
   });
 
   it('sendAuction(), when authToken is defined, it fires call clearing empty payload properties', () => {

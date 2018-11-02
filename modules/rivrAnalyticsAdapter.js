@@ -307,45 +307,16 @@ export function createNewAuctionObject() {
       page: window.location.pathname,
       categories: rivrAnalytics.context.siteCategories
     },
-    impressions: [
-      {
-        id: '',
-        adSpotId: '',
-        adType: '',
-        bidFloor: 0.0,
-        acceptedSizes: [
-          {
-            h: 0,
-            w: 0
-          }
-        ],
-        banner: {
-          h: 0,
-          w: 0,
-          pos: ''
-        },
-      }
-    ],
-    bidders: [
-      {
-        id: '',
-        bids: [
-          {
-            adomain: [''],
-            clearPrice: 0.0,
-            impId: '',
-            price: 0.0,
-            status: 0
-          }
-        ]
-      }
-    ],
+    impressions: [],
+    bidders: [],
     device: {
       userAgent: navigator.userAgent,
       browser: '',
       deviceType: getPlatformType()
     },
-    'ext.rivr.originalvalues': []
+    'ext.rivr.originalvalues': [],
+    'ext.rivr.optimiser': localStorage.getItem('rivr_should_optimise') || 'unoptimised',
+    modelVersion: localStorage.getItem('rivr_model_version') || null,
   }
 
   return auction;
