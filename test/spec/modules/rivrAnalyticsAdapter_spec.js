@@ -160,7 +160,7 @@ describe('RIVR Analytics adapter', () => {
     expect(endTime).to.be.eql(MILLIS_FROM_EPOCH_TO_NOW_MOCK);
   });
 
-  it('Firing AUCTION_END populates impressions arrai in auction object', () => {
+  it('Firing AUCTION_END populates impressions array in auction object', () => {
     analyticsAdapter.context = utils.deepClone(CONTEXT_AFTER_AUCTION_INIT);
 
     events.emit(CONSTANTS.EVENTS.AUCTION_END, AUCTION_END_EVENT_WITH_AD_UNITS_AND_BID_RESPONSES_MOCK);
