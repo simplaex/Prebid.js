@@ -1,5 +1,6 @@
 import {ajax} from 'src/ajax';
 import adapter from 'src/AnalyticsAdapter';
+import find from 'core-js/library/fn/array/find';
 import CONSTANTS from 'src/constants.json';
 import adaptermanager from 'src/adaptermanager';
 import { logInfo, generateUUID, timestamp } from 'src/utils';
@@ -98,11 +99,11 @@ function trackBidWon(args) {
 
 function setWinningBidStatus(args) {
   let auctionObject = rivrAnalytics.context.auctionObject;
-  const bidderObjectForThisWonBid = auctionObject.bidders.find((bidder) => {
+  const bidderObjectForThisWonBid = find(auctionObject.bidders, (bidder) => {
     return bidder.id === args.bidderCode;
   });
   if (bidderObjectForThisWonBid) {
-    const bidObjectForThisWonBid = bidderObjectForThisWonBid.bids.find((bid) => {
+    const bidObjectForThisWonBid = find(bidderObjectForThisWonBid.bids, (bid) => {
       return bid.impId === args.adUnitCode;
     });
     if (bidObjectForThisWonBid) {
@@ -123,7 +124,7 @@ function buildImpressionsArrayFromAuctionEnd(auctionEndEvent) {
     impression.id = adUnit.code;
     impression.adType = 'unknown';
     impression.acceptedSizes = [];
-    const bidReceivedForThisAdUnit = auctionEndEvent.bidsReceived.find((bidReceived) => {
+    const bidReceivedForThisAdUnit = find(auctionEndEvent.bidsReceived, (bidReceived) => {
       return adUnit.code === bidReceived.adUnitCode;
     });
     if (adUnit.mediaTypes) {
@@ -158,7 +159,7 @@ function buildBiddersArrayFromAuctionEnd(auctionEndEvent) {
     const bidder = {};
     bidder.id = bidderRequest.bidderCode;
     bidder.bids = bidderRequest.bids.map((bid) => {
-      const bidReceivedForThisRequest = auctionEndEvent.bidsReceived.find((bidReceived) => {
+      const bidReceivedForThisRequest = find(auctionEndEvent.bidsReceived, (bidReceived) => {
         return bidderRequest.bidderCode === bidReceived.bidderCode &&
           bid.bidId === bidReceived.adId &&
           bid.adUnitCode === bidReceived.adUnitCode;
