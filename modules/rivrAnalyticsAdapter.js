@@ -295,7 +295,6 @@ export function createNewAuctionObject() {
   const auction = {
     id: '',
     publisher: rivrAnalytics.context.clientID,
-    blockedCategories: [''],
     timestamp: timestamp(),
     user: {
       id: rivrAnalytics.context.userId
@@ -309,7 +308,6 @@ export function createNewAuctionObject() {
     bidders: [],
     device: {
       userAgent: navigator.userAgent,
-      browser: '',
       deviceType: getPlatformType()
     },
     'ext.rivr.originalvalues': [],
