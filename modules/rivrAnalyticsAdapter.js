@@ -236,23 +236,23 @@ function addClickHandler(bannerId) {
   pinHandlerToHTMLElement(bannerId, dataLoaderForHandler, addClickListener);
 };
 
-function addDisplayedImpHandler(bannerId) {
-  pinHandlerToHTMLElement(bannerId, dataLoaderForHandler, impHandler);
+function addDisplayedImpHandler(bannerAdUnitCode) {
+  pinHandlerToHTMLElement(bannerAdUnitCode, dataLoaderForHandler, impHandler);
 };
 
-export function pinHandlerToHTMLElement(elementId, dataLoaderForHandler, specializedHandler) {
+export function pinHandlerToHTMLElement(bannerAdUnitCode, dataLoaderForHandler, specializedHandler) {
   function waitForElement() {
-    let element = document.getElementById(elementId);
+    let element = document.querySelector(`iframe[id*="${bannerAdUnitCode}"]`);
     if (!element) {
       window.requestAnimationFrame(waitForElement);
     } else {
-      dataLoaderForHandler(element, specializedHandler);
+      dataLoaderForHandler(element, bannerAdUnitCode, specializedHandler);
     }
   }
   waitForElement();
 }
 
-export function dataLoaderForHandler(element, specializedHandler) {
+export function dataLoaderForHandler(element, bannerAdUnitCode, specializedHandler) {
   function waitForElement() {
     let iframe = element.getElementsByTagName('iframe')[0];
     if (!iframe) {
@@ -262,7 +262,7 @@ export function dataLoaderForHandler(element, specializedHandler) {
       if (!displayedImpression) {
         window.requestAnimationFrame(waitForElement);
       } else {
-        specializedHandler(iframe);
+        specializedHandler(iframe, bannerAdUnitCode);
       }
     }
   }
@@ -273,24 +273,21 @@ function addClickListener(iframe) {
   iframe.contentDocument.addEventListener('click', reportClickEvent);
 }
 
-function impHandler(iframe) {
-  let timestamp = new Date().toISOString();
-  let requestId = generateUUID();
-  let adContainerId = iframe.parentElement.parentElement.id;
+export function impHandler(iframe, adUnitCode) {
   let impression = {
-    timestamp,
-    'request_id': requestId,
-    'tag_id': adContainerId
+    timestamp: new Date().toISOString(),
+    'auctionId': rivrAnalytics.context.auctionObject.id,
+    adUnitCode
   };
   if (rivrAnalytics.context.queue) {
     rivrAnalytics.context.queue.push(impression);
   }
 }
 
-function addHandlers(bannersIds) {
-  bannersIds.forEach((bannerId) => {
-    addClickHandler(bannerId);
-    addDisplayedImpHandler(bannerId);
+function addHandlers(bannersAdUnitCodes) {
+  bannersAdUnitCodes.forEach((bannerAdUnitCode) => {
+    addClickHandler(bannerAdUnitCode);
+    addDisplayedImpHandler(bannerAdUnitCode);
   })
 };
 

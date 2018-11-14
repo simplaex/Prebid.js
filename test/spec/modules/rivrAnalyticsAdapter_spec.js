@@ -12,6 +12,7 @@ import {
   createNewAuctionObject,
   concatAllUnits,
   trackAuctionEnd,
+  impHandler,
 } from 'modules/rivrAnalyticsAdapter';
 import {expect} from 'chai';
 import adaptermanager from 'src/adaptermanager';
@@ -285,6 +286,26 @@ describe('RIVR Analytics adapter', () => {
     expect(payload.impressions[0].anImpressionProperty).to.be.equal(aMockString);
   });
 
+  it('impHandler(), inserts the impression object in the queue', () => {
+    const AUCTION_ID_MOCK = 'anAuctionId';
+    const AD_UNIT_CODE_MOCK = 'anAdUnitCode';
+    analyticsAdapter.context.auctionObject.id = AUCTION_ID_MOCK;
+
+    analyticsAdapter.context.queue = new ExpiringQueue(
+      () => {},
+      () => {},
+      EXPIRING_QUEUE_TIMEOUT_MOCK
+    );
+
+    impHandler({}, AD_UNIT_CODE_MOCK);
+
+    const firstImpression = analyticsAdapter.context.queue.peekAll()[0];
+
+    expect(firstImpression.timestamp).to.be.equal('1970-01-01T00:00:00.000Z');
+    expect(firstImpression.auctionId).to.be.equal(AUCTION_ID_MOCK);
+    expect(firstImpression.adUnitCode).to.be.equal(AD_UNIT_CODE_MOCK);
+  });
+
   it('reportClickEvent() calls endpoint', () => {
     const CLIENT_ID_MOCK = 'aClientId';
     const AUTH_TOKEN_MOCK = 'aToken';
@@ -366,7 +387,7 @@ describe('RIVR Analytics adapter', () => {
 
     expect(specializedHandlerSpy.callCount).to.be.equal(0);
 
-    dataLoaderForHandler(MOCK_ELEMENT, specializedHandlerSpy);
+    dataLoaderForHandler(MOCK_ELEMENT, 'aBannerAdUnitCode', specializedHandlerSpy);
 
     expect(specializedHandlerSpy.callCount).to.be.equal(1);
     expect(specializedHandlerSpy.firstCall.args[0].aDummyProperty).to.be.equal('aDummyPropertyValue');
@@ -406,7 +427,7 @@ describe('RIVR Analytics adapter', () => {
     const dataLoaderForHandlerSpy = sinon.spy();
     sinon.stub(window, 'requestAnimationFrame');
 
-    sinon.stub(document, 'getElementById').returns(ELEMENT_MOCK);
+    sinon.stub(document, 'querySelector').returns(ELEMENT_MOCK);
 
     expect(dataLoaderForHandlerSpy.callCount).to.be.equal(0);
 
@@ -416,7 +437,7 @@ describe('RIVR Analytics adapter', () => {
     expect(dataLoaderForHandlerSpy.firstCall.args[0].anElementProperty).to.be.equal('aValue');
 
     window.requestAnimationFrame.restore();
-    document.getElementById.restore();
+    document.querySelector.restore();
   });
 
   it('pinHandlerToHTMLElement(), when element is not there, it requests animation frame', () => {
