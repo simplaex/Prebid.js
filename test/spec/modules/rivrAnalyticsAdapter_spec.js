@@ -13,6 +13,8 @@ import {
   concatAllUnits,
   trackAuctionEnd,
   impHandler,
+  getCookie,
+  storeAndReturnRivrUsrIdCookie,
 } from 'modules/rivrAnalyticsAdapter';
 import {expect} from 'chai';
 import adaptermanager from 'src/adaptermanager';
@@ -534,6 +536,12 @@ describe('RIVR Analytics adapter', () => {
     expect(result[2].id).to.be.eql('video');
     expect(result[2].adType).to.be.eql('video');
     expect(result[2].acceptedSizes).to.be.eql([{w: 640, h: 360}, {w: 640, h: 480}]);
+  });
+
+  it('storeAndReturnRivrUsrIdCookie(), stores rvr_usr_id cookie and returns its value', () => {
+    const storedUserId = storeAndReturnRivrUsrIdCookie(AUCTION_END_EVENT_WITH_AD_UNITS_AND_BID_RESPONSES_MOCK);
+    expect(UUID_REG_EXP.test(storedUserId)).to.equal(true);
+    expect(getCookie('rvr_usr_id')).to.equal(storedUserId);
   });
 
   const BANNER_AD_UNITS_MOCK = [
