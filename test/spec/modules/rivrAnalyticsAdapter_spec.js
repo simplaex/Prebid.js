@@ -16,6 +16,7 @@ import {
   getCookie,
   storeAndReturnRivrUsrIdCookie,
   arrayDifference,
+  activelyWaitForBannersToRender,
 } from 'modules/rivrAnalyticsAdapter';
 import {expect} from 'chai';
 import adaptermanager from 'src/adaptermanager';
@@ -24,7 +25,7 @@ import CONSTANTS from 'src/constants.json';
 
 const events = require('../../../src/events');
 
-describe.only('RIVR Analytics adapter', () => {
+describe('RIVR Analytics adapter', () => {
   const EXPIRING_QUEUE_TIMEOUT = 4000;
   const EXPIRING_QUEUE_TIMEOUT_MOCK = 100;
   const RVR_CLIENT_ID_MOCK = 'aCliendId';
@@ -370,74 +371,55 @@ describe.only('RIVR Analytics adapter', () => {
     expect(result['ext.rivr.pmp_original']).to.be.equal('theOriginalPmp');
   });
 
-  // it('dataLoaderForHandler(), when iframe and the ad image contained in it are there, it calls the specialized handler', () => {
-  //   const MOCK_ELEMENT = {
-  //     getElementsByTagName: () => {
-  //       return [
-  //         {
-  //           contentDocument: {
-  //             getElementsByTagName: () => {
-  //               return ['displayedImpressionMock']
-  //             }
-  //           },
-  //           aDummyProperty: 'aDummyPropertyValue'
-  //         }
-  //       ]
-  //     }
-  //   };
-  //
-  //   var specializedHandlerSpy = sinon.spy();
-  //
-  //   expect(specializedHandlerSpy.callCount).to.be.equal(0);
-  //
-  //   dataLoaderForHandler(MOCK_ELEMENT, 'aBannerAdUnitCode', specializedHandlerSpy);
-  //
-  //   expect(specializedHandlerSpy.callCount).to.be.equal(1);
-  //   expect(specializedHandlerSpy.firstCall.args[0].aDummyProperty).to.be.equal('aDummyPropertyValue');
-  //   expect(specializedHandlerSpy.firstCall.args[0].contentDocument.getElementsByTagName()[0]).to.be.equal('displayedImpressionMock');
-  // });
+  it('activelyWaitForBannersToRender(), when element is there and has a DFP-like iframe structure containing an image, it puts impressions in the queue, adds the click event listener and does not call requestAnimationFrame', () => {
+    const IFRAME_MOCK = {
+      contentDocument: {
+        querySelector: () => {},
+        addEventListener: () => {}
+      }
+    };
+    const IMAGE_MOCK = {};
+    const AD_UNIT_CODES_MOCK = ['adUnitCode1', 'adUnitCode2'];
+    const requestAnimationFrameStub = sinon.stub(window, 'requestAnimationFrame');
+    sinon.stub(document, 'querySelector').returns(IFRAME_MOCK);
+    sinon.stub(IFRAME_MOCK.contentDocument, 'querySelector').returns(IMAGE_MOCK);
+    const addEventListenerStub = sinon.stub(IFRAME_MOCK.contentDocument, 'addEventListener');
 
-  // it('dataLoaderForHandler(), when iframe is not there, it requests animation frame', () => {
-  //   const MOCK_ELEMENT = {
-  //     getElementsByTagName: () => {
-  //       return [
-  //         {
-  //           contentDocument: {
-  //             getElementsByTagName: () => {
-  //               return []
-  //             }
-  //           },
-  //         }
-  //       ]
-  //     }
-  //   };
-  //
-  //   const specializedHandlerSpy = sinon.spy();
-  //   const requestAnimationFrameStub = sinon.stub(window, 'requestAnimationFrame');
-  //   expect(requestAnimationFrameStub.callCount).to.be.equal(0);
-  //
-  //   dataLoaderForHandler(MOCK_ELEMENT, specializedHandlerSpy);
-  //
-  //   expect(requestAnimationFrameStub.callCount).to.be.equal(1);
-  //
-  //   requestAnimationFrameStub.restore();
-  // });
+    const impressionsQueueBeforeRendering = utils.deepClone(analyticsAdapter.context.queue.peekAll());
 
-  it('pinHandlerToHTMLElement(), when element is there, it calls dataLoaderForHandler', () => {
-    const ELEMENT_MOCK = {
-      anElementProperty: 'aValue'
-    }
-    const dataLoaderForHandlerSpy = sinon.spy();
-    sinon.stub(window, 'requestAnimationFrame');
+    activelyWaitForBannersToRender(AD_UNIT_CODES_MOCK);
 
-    sinon.stub(document, 'querySelector').returns(ELEMENT_MOCK);
+    const impressionsQueueAfterRendering = utils.deepClone(analyticsAdapter.context.queue.peekAll());
 
-    expect(dataLoaderForHandlerSpy.callCount).to.be.equal(0);
+    expect(impressionsQueueBeforeRendering.length).to.be.equal(0);
+    expect(impressionsQueueAfterRendering.length).to.be.equal(2);
+    expect(impressionsQueueAfterRendering[0].adUnitCode).to.be.equal(AD_UNIT_CODES_MOCK[0]);
+    expect(impressionsQueueAfterRendering[1].adUnitCode).to.be.equal(AD_UNIT_CODES_MOCK[1]);
 
-    pinHandlerToHTMLElement('', dataLoaderForHandlerSpy, () => {});
+    expect(addEventListenerStub.callCount).to.be.equal(2);
 
-    expect(dataLoaderForHandlerSpy.callCount).to.be.equal(1);
-    expect(dataLoaderForHandlerSpy.firstCall.args[0].anElementProperty).to.be.equal('aValue');
+    expect(requestAnimationFrameStub.callCount).to.be.equal(0);
+
+    window.requestAnimationFrame.restore();
+    document.querySelector.restore();
+  });
+
+  it('activelyWaitForBannersToRender(), when element is NOT there, it calls requestAnimationFrame', () => {
+    const NOT_AN_IFRAME_MOCK = {};
+    const AD_UNIT_CODES_MOCK = ['adUnitCode1', 'adUnitCode2'];
+    const requestAnimationFrameStub = sinon.stub(window, 'requestAnimationFrame');
+    sinon.stub(document, 'querySelector').returns(NOT_AN_IFRAME_MOCK);
+
+    const impressionsQueueBeforeRendering = utils.deepClone(analyticsAdapter.context.queue.peekAll());
+
+    activelyWaitForBannersToRender(AD_UNIT_CODES_MOCK);
+
+    const impressionsQueueAfterRendering = utils.deepClone(analyticsAdapter.context.queue.peekAll());
+
+    expect(impressionsQueueBeforeRendering.length).to.be.equal(0);
+    expect(impressionsQueueAfterRendering.length).to.be.equal(0);
+
+    expect(requestAnimationFrameStub.callCount).to.be.equal(1);
 
     window.requestAnimationFrame.restore();
     document.querySelector.restore();
@@ -480,23 +462,6 @@ describe.only('RIVR Analytics adapter', () => {
 
     expect(result.length).to.be.equal(1);
     expect(result[0]).to.be.equal('bbb');
-  });
-
-  it('pinHandlerToHTMLElement(), when element is not there, it requests animation frame', () => {
-    const dataLoaderForHandlerSpy = sinon.spy();
-    const requestAnimationFrameStub = sinon.stub(window, 'requestAnimationFrame');
-
-    sinon.stub(document, 'getElementById').returns(undefined);
-
-    expect(requestAnimationFrameStub.callCount).to.be.equal(0);
-
-    pinHandlerToHTMLElement('', dataLoaderForHandlerSpy, () => {});
-
-    expect(dataLoaderForHandlerSpy.callCount).to.be.equal(0);
-    expect(requestAnimationFrameStub.callCount).to.be.equal(1);
-
-    requestAnimationFrameStub.restore();
-    document.getElementById.restore();
   });
 
   it('setAuctionAbjectPosition(), it sets latitude and longitude in auction object', () => {

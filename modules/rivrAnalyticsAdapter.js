@@ -244,7 +244,7 @@ export function handleImpression(iframe, adUnitCode) {
   }
 }
 
-function activelyWaitForBannersToRender(adUnitCodesOfNotYetRenderedBanners) {
+export function activelyWaitForBannersToRender(adUnitCodesOfNotYetRenderedBanners) {
   let keepCheckingForAdsRendering = true;
   let adUnitCodesOfRenderedBanners = [];
   setTimeout(() => keepCheckingForAdsRendering = false, ADS_RENDERING_TIMEOUT);
