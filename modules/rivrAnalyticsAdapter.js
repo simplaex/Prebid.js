@@ -3,12 +3,13 @@ import adapter from 'src/AnalyticsAdapter';
 import find from 'core-js/library/fn/array/find';
 import CONSTANTS from 'src/constants.json';
 import adaptermanager from 'src/adaptermanager';
-import { logInfo, generateUUID, timestamp } from 'src/utils';
+import { deepClone, generateUUID, logInfo, timestamp } from 'src/utils';
 
 const analyticsType = 'endpoint';
 const rivrUsrIdCookieKey = 'rvr_usr_id';
 const DEFAULT_HOST = 'tracker.rivr.simplaex.com';
 const DEFAULT_QUEUE_TIMEOUT = 4000;
+const ADS_RENDERING_TIMEOUT = 10000;
 
 let rivrAnalytics = Object.assign(adapter({analyticsType}), {
   track({ eventType, args }) {
@@ -232,48 +233,7 @@ export function reportClickEvent(event) {
   );
 };
 
-function addClickHandler(bannerId) {
-  pinHandlerToHTMLElement(bannerId, dataLoaderForHandler, addClickListener);
-};
-
-function addDisplayedImpHandler(bannerAdUnitCode) {
-  pinHandlerToHTMLElement(bannerAdUnitCode, dataLoaderForHandler, impHandler);
-};
-
-export function pinHandlerToHTMLElement(bannerAdUnitCode, dataLoaderForHandler, specializedHandler) {
-  function waitForElement() {
-    let element = document.querySelector(`iframe[id*="${bannerAdUnitCode}"]`);
-    if (!element) {
-      window.requestAnimationFrame(waitForElement);
-    } else {
-      dataLoaderForHandler(element, bannerAdUnitCode, specializedHandler);
-    }
-  }
-  waitForElement();
-}
-
-export function dataLoaderForHandler(element, bannerAdUnitCode, specializedHandler) {
-  function waitForElement() {
-    let iframe = element.getElementsByTagName('iframe')[0];
-    if (!iframe) {
-      window.requestAnimationFrame(waitForElement);
-    } else {
-      let displayedImpression = iframe.contentDocument.getElementsByTagName('img').length > 0;
-      if (!displayedImpression) {
-        window.requestAnimationFrame(waitForElement);
-      } else {
-        specializedHandler(iframe, bannerAdUnitCode);
-      }
-    }
-  }
-  waitForElement();
-};
-
-function addClickListener(iframe) {
-  iframe.contentDocument.addEventListener('click', reportClickEvent);
-}
-
-export function impHandler(iframe, adUnitCode) {
+export function handleImpression(iframe, adUnitCode) {
   let impression = {
     timestamp: new Date().toISOString(),
     'auctionId': rivrAnalytics.context.auctionObject.id,
@@ -284,12 +244,39 @@ export function impHandler(iframe, adUnitCode) {
   }
 }
 
-function addHandlers(bannersAdUnitCodes) {
-  bannersAdUnitCodes.forEach((bannerAdUnitCode) => {
-    addClickHandler(bannerAdUnitCode);
-    addDisplayedImpHandler(bannerAdUnitCode);
-  })
+function activelyWaitForBannersToRender(adUnitCodesOfNotYetRenderedBanners) {
+  let keepCheckingForAdsRendering = true;
+  let adUnitCodesOfRenderedBanners = [];
+  setTimeout(() => keepCheckingForAdsRendering = false, ADS_RENDERING_TIMEOUT);
+
+  function goThroughNotYetRenderedAds() {
+    if (adUnitCodesOfNotYetRenderedBanners.length) {
+      adUnitCodesOfNotYetRenderedBanners.forEach((bannerAdUnitCode, bannerAdUnitCodeIndex) => {
+        const foundIframe = document.querySelector(`iframe[id*="${bannerAdUnitCode}"]`);
+        if (foundIframe && foundIframe.contentDocument) {
+          const foundImg = foundIframe.contentDocument.querySelector('a img');
+          if (foundImg) {
+            handleImpression(foundIframe, bannerAdUnitCode);
+            foundIframe.contentDocument.addEventListener('click', reportClickEvent);
+            adUnitCodesOfRenderedBanners.push(bannerAdUnitCode);
+          }
+        }
+      });
+
+      if (keepCheckingForAdsRendering && arrayDifference(adUnitCodesOfNotYetRenderedBanners, adUnitCodesOfRenderedBanners).length) {
+        window.requestAnimationFrame(goThroughNotYetRenderedAds);
+      }
+    }
+  }
+
+  goThroughNotYetRenderedAds();
 };
+
+export function arrayDifference(array1, array2) {
+  return array1.filter((adUnitCode) => {
+    return array2.indexOf(adUnitCode) < 0;
+  });
+}
 
 export function createNewAuctionObject() {
   const auction = {
@@ -454,7 +441,7 @@ rivrAnalytics.enableAnalytics = (config) => {
   let bannersIds = config.options.bannersIds;
   if (bannersIds) {
     if (bannersIds.length > 0) {
-      addHandlers(config.options.bannersIds);
+      activelyWaitForBannersToRender(deepClone(config.options.bannersIds));
     }
   }
   logInfo('Rivr Analytics enabled with config', rivrAnalytics.context);

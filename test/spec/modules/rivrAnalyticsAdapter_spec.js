@@ -12,9 +12,10 @@ import {
   createNewAuctionObject,
   concatAllUnits,
   trackAuctionEnd,
-  impHandler,
+  handleImpression,
   getCookie,
   storeAndReturnRivrUsrIdCookie,
+  arrayDifference,
 } from 'modules/rivrAnalyticsAdapter';
 import {expect} from 'chai';
 import adaptermanager from 'src/adaptermanager';
@@ -23,7 +24,7 @@ import CONSTANTS from 'src/constants.json';
 
 const events = require('../../../src/events');
 
-describe('RIVR Analytics adapter', () => {
+describe.only('RIVR Analytics adapter', () => {
   const EXPIRING_QUEUE_TIMEOUT = 4000;
   const EXPIRING_QUEUE_TIMEOUT_MOCK = 100;
   const RVR_CLIENT_ID_MOCK = 'aCliendId';
@@ -288,7 +289,7 @@ describe('RIVR Analytics adapter', () => {
     expect(payload.impressions[0].anImpressionProperty).to.be.equal(aMockString);
   });
 
-  it('impHandler(), inserts the impression object in the queue', () => {
+  it('handleImpression(), inserts the impression object in the queue', () => {
     const AUCTION_ID_MOCK = 'anAuctionId';
     const AD_UNIT_CODE_MOCK = 'anAdUnitCode';
     analyticsAdapter.context.auctionObject.id = AUCTION_ID_MOCK;
@@ -299,7 +300,7 @@ describe('RIVR Analytics adapter', () => {
       EXPIRING_QUEUE_TIMEOUT_MOCK
     );
 
-    impHandler({}, AD_UNIT_CODE_MOCK);
+    handleImpression({}, AD_UNIT_CODE_MOCK);
 
     const firstImpression = analyticsAdapter.context.queue.peekAll()[0];
 
@@ -369,58 +370,58 @@ describe('RIVR Analytics adapter', () => {
     expect(result['ext.rivr.pmp_original']).to.be.equal('theOriginalPmp');
   });
 
-  it('dataLoaderForHandler(), when iframe and the ad image contained in it are there, it calls the specialized handler', () => {
-    const MOCK_ELEMENT = {
-      getElementsByTagName: () => {
-        return [
-          {
-            contentDocument: {
-              getElementsByTagName: () => {
-                return ['displayedImpressionMock']
-              }
-            },
-            aDummyProperty: 'aDummyPropertyValue'
-          }
-        ]
-      }
-    };
+  // it('dataLoaderForHandler(), when iframe and the ad image contained in it are there, it calls the specialized handler', () => {
+  //   const MOCK_ELEMENT = {
+  //     getElementsByTagName: () => {
+  //       return [
+  //         {
+  //           contentDocument: {
+  //             getElementsByTagName: () => {
+  //               return ['displayedImpressionMock']
+  //             }
+  //           },
+  //           aDummyProperty: 'aDummyPropertyValue'
+  //         }
+  //       ]
+  //     }
+  //   };
+  //
+  //   var specializedHandlerSpy = sinon.spy();
+  //
+  //   expect(specializedHandlerSpy.callCount).to.be.equal(0);
+  //
+  //   dataLoaderForHandler(MOCK_ELEMENT, 'aBannerAdUnitCode', specializedHandlerSpy);
+  //
+  //   expect(specializedHandlerSpy.callCount).to.be.equal(1);
+  //   expect(specializedHandlerSpy.firstCall.args[0].aDummyProperty).to.be.equal('aDummyPropertyValue');
+  //   expect(specializedHandlerSpy.firstCall.args[0].contentDocument.getElementsByTagName()[0]).to.be.equal('displayedImpressionMock');
+  // });
 
-    var specializedHandlerSpy = sinon.spy();
-
-    expect(specializedHandlerSpy.callCount).to.be.equal(0);
-
-    dataLoaderForHandler(MOCK_ELEMENT, 'aBannerAdUnitCode', specializedHandlerSpy);
-
-    expect(specializedHandlerSpy.callCount).to.be.equal(1);
-    expect(specializedHandlerSpy.firstCall.args[0].aDummyProperty).to.be.equal('aDummyPropertyValue');
-    expect(specializedHandlerSpy.firstCall.args[0].contentDocument.getElementsByTagName()[0]).to.be.equal('displayedImpressionMock');
-  });
-
-  it('dataLoaderForHandler(), when iframe is not there, it requests animation frame', () => {
-    const MOCK_ELEMENT = {
-      getElementsByTagName: () => {
-        return [
-          {
-            contentDocument: {
-              getElementsByTagName: () => {
-                return []
-              }
-            },
-          }
-        ]
-      }
-    };
-
-    const specializedHandlerSpy = sinon.spy();
-    const requestAnimationFrameStub = sinon.stub(window, 'requestAnimationFrame');
-    expect(requestAnimationFrameStub.callCount).to.be.equal(0);
-
-    dataLoaderForHandler(MOCK_ELEMENT, specializedHandlerSpy);
-
-    expect(requestAnimationFrameStub.callCount).to.be.equal(1);
-
-    requestAnimationFrameStub.restore();
-  });
+  // it('dataLoaderForHandler(), when iframe is not there, it requests animation frame', () => {
+  //   const MOCK_ELEMENT = {
+  //     getElementsByTagName: () => {
+  //       return [
+  //         {
+  //           contentDocument: {
+  //             getElementsByTagName: () => {
+  //               return []
+  //             }
+  //           },
+  //         }
+  //       ]
+  //     }
+  //   };
+  //
+  //   const specializedHandlerSpy = sinon.spy();
+  //   const requestAnimationFrameStub = sinon.stub(window, 'requestAnimationFrame');
+  //   expect(requestAnimationFrameStub.callCount).to.be.equal(0);
+  //
+  //   dataLoaderForHandler(MOCK_ELEMENT, specializedHandlerSpy);
+  //
+  //   expect(requestAnimationFrameStub.callCount).to.be.equal(1);
+  //
+  //   requestAnimationFrameStub.restore();
+  // });
 
   it('pinHandlerToHTMLElement(), when element is there, it calls dataLoaderForHandler', () => {
     const ELEMENT_MOCK = {
@@ -440,6 +441,45 @@ describe('RIVR Analytics adapter', () => {
 
     window.requestAnimationFrame.restore();
     document.querySelector.restore();
+  });
+
+  it('arrayDifference(), returns the full array if the intersection is empty', () => {
+    const array1 = ['aaa', 'bbb', 'ccc', 'ddd'];
+    const array2 = ['eee'];
+
+    const result = arrayDifference(array1, array2);
+
+    expect(result.length).to.be.equal(array1.length);
+    result.every((value, index) => expect(value).to.be.equal(array1[index]));
+  });
+
+  it('arrayDifference(), returns the full array if the the one to subtract is empty', () => {
+    const array1 = ['aaa', 'bbb', 'ccc', 'ddd'];
+    const array2 = [];
+
+    const result = arrayDifference(array1, array2);
+
+    expect(result.length).to.be.equal(array1.length);
+    result.every((value, index) => expect(value).to.be.equal(array1[index]));
+  });
+
+  it('arrayDifference(), returns an empty array if the first array is empty', () => {
+    const array1 = [];
+    const array2 = ['ddd'];
+
+    const result = arrayDifference(array1, array2);
+
+    expect(result.length).to.be.equal(0);
+  });
+
+  it('arrayDifference(), returns the difference of 2 string arrays', () => {
+    const array1 = ['aaa', 'bbb', 'ccc', 'ddd'];
+    const array2 = ['aaa', 'ccc', 'ddd'];
+
+    const result = arrayDifference(array1, array2);
+
+    expect(result.length).to.be.equal(1);
+    expect(result[0]).to.be.equal('bbb');
   });
 
   it('pinHandlerToHTMLElement(), when element is not there, it requests animation frame', () => {
