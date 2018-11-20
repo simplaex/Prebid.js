@@ -207,7 +207,7 @@ function getPlatformType() {
 };
 
 // Using closure in order to reference adUnitCode inside the event handler.
-export function clickEventHandlerWithClosureScope(adUnitCode) {
+export function handleClickEventWithClosureScope(adUnitCode) {
   return function (event) {
     const clickEventPayload = createNewBasicEvent(adUnitCode);
     let link = event.currentTarget.getElementsByTagName('a')[0];
@@ -230,32 +230,10 @@ export function clickEventHandlerWithClosureScope(adUnitCode) {
   };
 }
 
-// export function reportClickEvent(event) {
-//   console.log('adUnitCode', adUnitCode);
-//   const clickEventPayload = createNewBasicEvent('TODO_PLACEHOLDER');
-//   let link = event.currentTarget.getElementsByTagName('a')[0];
-//   if (link) {
-//     clickEventPayload.clickUrl = link.getAttribute('href');
-//   }
-//
-//   logInfo('Sending click events with parameters: ', clickEventPayload);
-//   ajax(
-//     `http://${rivrAnalytics.context.host}/${rivrAnalytics.context.clientID}/clicks`,
-//     () => {},
-//     JSON.stringify(clickEventPayload),
-//     {
-//       contentType: 'application/json',
-//       customHeaders: {
-//         'Authorization': 'Basic ' + rivrAnalytics.context.authToken
-//       }
-//     }
-//   );
-// };
-
 function createNewBasicEvent(adUnitCode) {
   return {
     timestamp: new Date().toISOString(),
-    'auctionId': rivrAnalytics.context.auctionObject.id,
+    auctionId: rivrAnalytics.context.auctionObject.id,
     adUnitCode
   }
 }
@@ -279,7 +257,7 @@ export function activelyWaitForBannersToRender(adUnitCodesOfNotYetRenderedBanner
           const foundImg = foundIframe.contentDocument.querySelector('a img');
           if (foundImg) {
             handleImpression(foundIframe, bannerAdUnitCode);
-            foundIframe.contentDocument.addEventListener('click', clickEventHandlerWithClosureScope(bannerAdUnitCode));
+            foundIframe.contentDocument.addEventListener('click', handleClickEventWithClosureScope(bannerAdUnitCode));
             adUnitCodesOfRenderedBanners.push(bannerAdUnitCode);
           }
         }

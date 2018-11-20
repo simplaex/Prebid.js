@@ -4,7 +4,7 @@ import {
   ExpiringQueue,
   sendAuction,
   sendImpressions,
-  reportClickEvent,
+  handleClickEventWithClosureScope,
   createUnOptimisedParamsField,
   dataLoaderForHandler,
   pinHandlerToHTMLElement,
@@ -310,10 +310,12 @@ describe('RIVR Analytics adapter', () => {
     expect(firstImpression.adUnitCode).to.be.equal(AD_UNIT_CODE_MOCK);
   });
 
-  it('reportClickEvent() calls endpoint', () => {
+  it('handleClickEventWithClosureScope() calls endpoint', () => {
     const CLIENT_ID_MOCK = 'aClientId';
     const AUTH_TOKEN_MOCK = 'aToken';
     const CLICK_URL_MOCK = 'clickURLMock';
+    const AUCTION_ID_MOCK = 'anAuctionId';
+    const AD_UNIT_CODE_MOCK = 'anAdUnitCode';
     const EVENT_MOCK = {
       currentTarget: {
         getElementsByTagName: () => {
@@ -332,10 +334,12 @@ describe('RIVR Analytics adapter', () => {
     analyticsAdapter.context.clientID = CLIENT_ID_MOCK;
     analyticsAdapter.context.auctionObject.nullProperty = null;
     analyticsAdapter.context.auctionObject.notNullProperty = 'aValue';
+    analyticsAdapter.context.auctionObject.id = AUCTION_ID_MOCK;
 
     expect(ajaxStub.callCount).to.be.equal(0);
 
-    reportClickEvent(EVENT_MOCK);
+    // handleClickEventWithClosureScope returns a function
+    handleClickEventWithClosureScope(AD_UNIT_CODE_MOCK)(EVENT_MOCK);
 
     const payload = JSON.parse(ajaxStub.getCall(0).args[2]);
     const options = ajaxStub.getCall(0).args[3];
@@ -344,8 +348,9 @@ describe('RIVR Analytics adapter', () => {
     expect(ajaxStub.getCall(0).args[0]).to.match(/http:\/\/tracker.rivr.simplaex.com\/aClientId\/clicks/);
     expect(options.customHeaders.Authorization).to.equal('Basic aToken');
     expect(payload.timestamp).to.be.equal('1970-01-01T00:00:00.000Z');
-    expect(payload.request_id).to.be.a('string');
-    expect(payload.click_url).to.be.equal(CLICK_URL_MOCK);
+    expect(payload.auctionId).to.be.equal(AUCTION_ID_MOCK);
+    expect(payload.adUnitCode).to.be.equal(AD_UNIT_CODE_MOCK);
+    expect(payload.clickUrl).to.be.equal(CLICK_URL_MOCK);
   });
 
   it('createUnOptimisedParamsField(), creates object with unoptimized properties', () => {
