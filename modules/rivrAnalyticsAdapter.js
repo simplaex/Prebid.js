@@ -10,6 +10,12 @@ const rivrUsrIdCookieKey = 'rvr_usr_id';
 const DEFAULT_HOST = 'tracker.rivr.simplaex.com';
 const DEFAULT_QUEUE_TIMEOUT = 4000;
 const ADS_RENDERING_TIMEOUT = 10000;
+const RIVR_CONSTANTS = {
+  ADSERVER: {
+    NONE: 'none',
+    DFP: 'DFP',
+  }
+}
 
 let rivrAnalytics = Object.assign(adapter({analyticsType}), {
   track({ eventType, args }) {
@@ -238,7 +244,7 @@ function createNewBasicEvent(adUnitCode) {
   }
 }
 
-export function handleImpression(iframe, adUnitCode) {
+export function handleImpression(adUnitCode) {
   if (rivrAnalytics.context.queue) {
     rivrAnalytics.context.queue.push(createNewBasicEvent(adUnitCode));
   }
@@ -251,15 +257,14 @@ export function activelyWaitForBannersToRender(adUnitCodesOfNotYetRenderedBanner
 
   function goThroughNotYetRenderedAds() {
     if (adUnitCodesOfNotYetRenderedBanners.length) {
-      adUnitCodesOfNotYetRenderedBanners.forEach((bannerAdUnitCode, bannerAdUnitCodeIndex) => {
-        const foundIframe = document.querySelector(`iframe[id*="${bannerAdUnitCode}"]`);
-        if (foundIframe && foundIframe.contentDocument) {
-          const foundImg = foundIframe.contentDocument.querySelector('a img');
-          if (foundImg) {
-            handleImpression(foundIframe, bannerAdUnitCode);
-            foundIframe.contentDocument.addEventListener('click', handleClickEventWithClosureScope(bannerAdUnitCode));
-            adUnitCodesOfRenderedBanners.push(bannerAdUnitCode);
-          }
+      adUnitCodesOfNotYetRenderedBanners.forEach((bannerAdUnitCode) => {
+        switch (rivrAnalytics.context.adServer) {
+          case RIVR_CONSTANTS.ADSERVER.NONE:
+            searchForSimpleBanners(bannerAdUnitCode, adUnitCodesOfRenderedBanners);
+            break;
+          case RIVR_CONSTANTS.ADSERVER.DFP:
+            seaschForDFPBanners(bannerAdUnitCode, adUnitCodesOfRenderedBanners);
+            break;
         }
       });
 
@@ -271,6 +276,27 @@ export function activelyWaitForBannersToRender(adUnitCodesOfNotYetRenderedBanner
 
   goThroughNotYetRenderedAds();
 };
+
+function seaschForDFPBanners(bannerAdUnitCode, adUnitCodesOfRenderedBanners) {
+  const foundIframe = document.querySelector(`iframe[id*="${bannerAdUnitCode}"]`);
+  if (foundIframe && foundIframe.contentDocument) {
+    const foundImg = foundIframe.contentDocument.querySelector('a img');
+    if (foundImg) {
+      handleImpression(bannerAdUnitCode);
+      foundIframe.contentDocument.addEventListener('click', handleClickEventWithClosureScope(bannerAdUnitCode));
+      adUnitCodesOfRenderedBanners.push(bannerAdUnitCode);
+    }
+  }
+}
+
+function searchForSimpleBanners(bannerAdUnitCode, adUnitCodesOfRenderedBanners) {
+  const foundImg = document.querySelector(`[id*="${bannerAdUnitCode}"] a img`);
+  if (foundImg && foundImg.height > 1 && foundImg.width > 1) {
+    handleImpression(bannerAdUnitCode);
+    foundImg.addEventListener('click', handleClickEventWithClosureScope(bannerAdUnitCode));
+    adUnitCodesOfRenderedBanners.push(bannerAdUnitCode);
+  }
+}
 
 export function arrayDifference(array1, array2) {
   return array1.filter((adUnitCode) => {
@@ -435,6 +461,7 @@ rivrAnalytics.enableAnalytics = (config) => {
     siteCategories: config.options.siteCategories || [],
     clientID: config.options.clientID,
     authToken: config.options.authToken,
+    adServer: config.options.adServer,
     queue: new ExpiringQueue(sendImpressions, sendAuction, config.options.queueTimeout || DEFAULT_QUEUE_TIMEOUT)
   };
 

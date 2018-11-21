@@ -301,7 +301,7 @@ describe('RIVR Analytics adapter', () => {
       EXPIRING_QUEUE_TIMEOUT_MOCK
     );
 
-    handleImpression({}, AD_UNIT_CODE_MOCK);
+    handleImpression(AD_UNIT_CODE_MOCK);
 
     const firstImpression = analyticsAdapter.context.queue.peekAll()[0];
 
@@ -310,7 +310,7 @@ describe('RIVR Analytics adapter', () => {
     expect(firstImpression.adUnitCode).to.be.equal(AD_UNIT_CODE_MOCK);
   });
 
-  it('handleClickEventWithClosureScope() calls endpoint', () => {
+  it('handleClickEventWithClosureScope() calls clicks endpoint correctly', () => {
     const CLIENT_ID_MOCK = 'aClientId';
     const AUTH_TOKEN_MOCK = 'aToken';
     const CLICK_URL_MOCK = 'clickURLMock';
@@ -376,58 +376,92 @@ describe('RIVR Analytics adapter', () => {
     expect(result['ext.rivr.pmp_original']).to.be.equal('theOriginalPmp');
   });
 
-  it('activelyWaitForBannersToRender(), when element is there and has a DFP-like iframe structure containing an image, it puts impressions in the queue, adds the click event listener and does not call requestAnimationFrame', () => {
-    const IFRAME_MOCK = {
-      contentDocument: {
-        querySelector: () => {},
+  describe('activelyWaitForBannersToRender()', () => {
+    it('when DFP is used as ad server and element is there, it puts impressions in the queue, adds the click event listener and does not call requestAnimationFrame', () => {
+      const IFRAME_MOCK = {
+        contentDocument: {
+          querySelector: () => {},
+          addEventListener: () => {}
+        }
+      };
+      const IMAGE_MOCK = {};
+      const AD_UNIT_CODES_MOCK = ['adUnitCode1', 'adUnitCode2'];
+      const requestAnimationFrameStub = sinon.stub(window, 'requestAnimationFrame');
+      sinon.stub(document, 'querySelector').returns(IFRAME_MOCK);
+      sinon.stub(IFRAME_MOCK.contentDocument, 'querySelector').returns(IMAGE_MOCK);
+      const addEventListenerStub = sinon.stub(IFRAME_MOCK.contentDocument, 'addEventListener');
+      analyticsAdapter.context.adServer = 'DFP';
+
+      const impressionsQueueBeforeRendering = utils.deepClone(analyticsAdapter.context.queue.peekAll());
+
+      activelyWaitForBannersToRender(AD_UNIT_CODES_MOCK);
+
+      const impressionsQueueAfterRendering = utils.deepClone(analyticsAdapter.context.queue.peekAll());
+
+      expect(impressionsQueueBeforeRendering.length).to.be.equal(0);
+      expect(impressionsQueueAfterRendering.length).to.be.equal(2);
+      expect(impressionsQueueAfterRendering[0].adUnitCode).to.be.equal(AD_UNIT_CODES_MOCK[0]);
+      expect(impressionsQueueAfterRendering[1].adUnitCode).to.be.equal(AD_UNIT_CODES_MOCK[1]);
+
+      expect(addEventListenerStub.callCount).to.be.equal(2);
+
+      expect(requestAnimationFrameStub.callCount).to.be.equal(0);
+
+      window.requestAnimationFrame.restore();
+      document.querySelector.restore();
+    });
+
+    it('when no ad server is used as ad server and element is there, it puts impressions in the queue, adds the click event listener and does not call requestAnimationFrame', () => {
+      const IMAGE_MOCK = {
+        width: 2,
+        height: 2,
         addEventListener: () => {}
-      }
-    };
-    const IMAGE_MOCK = {};
-    const AD_UNIT_CODES_MOCK = ['adUnitCode1', 'adUnitCode2'];
-    const requestAnimationFrameStub = sinon.stub(window, 'requestAnimationFrame');
-    sinon.stub(document, 'querySelector').returns(IFRAME_MOCK);
-    sinon.stub(IFRAME_MOCK.contentDocument, 'querySelector').returns(IMAGE_MOCK);
-    const addEventListenerStub = sinon.stub(IFRAME_MOCK.contentDocument, 'addEventListener');
+      };
+      const AD_UNIT_CODES_MOCK = ['adUnitCode1', 'adUnitCode2'];
+      const requestAnimationFrameStub = sinon.stub(window, 'requestAnimationFrame');
+      sinon.stub(document, 'querySelector').returns(IMAGE_MOCK);
+      const addEventListenerStub = sinon.stub(IMAGE_MOCK, 'addEventListener');
+      analyticsAdapter.context.adServer = 'none';
 
-    const impressionsQueueBeforeRendering = utils.deepClone(analyticsAdapter.context.queue.peekAll());
+      const impressionsQueueBeforeRendering = utils.deepClone(analyticsAdapter.context.queue.peekAll());
 
-    activelyWaitForBannersToRender(AD_UNIT_CODES_MOCK);
+      activelyWaitForBannersToRender(AD_UNIT_CODES_MOCK);
 
-    const impressionsQueueAfterRendering = utils.deepClone(analyticsAdapter.context.queue.peekAll());
+      const impressionsQueueAfterRendering = utils.deepClone(analyticsAdapter.context.queue.peekAll());
 
-    expect(impressionsQueueBeforeRendering.length).to.be.equal(0);
-    expect(impressionsQueueAfterRendering.length).to.be.equal(2);
-    expect(impressionsQueueAfterRendering[0].adUnitCode).to.be.equal(AD_UNIT_CODES_MOCK[0]);
-    expect(impressionsQueueAfterRendering[1].adUnitCode).to.be.equal(AD_UNIT_CODES_MOCK[1]);
+      expect(impressionsQueueBeforeRendering.length).to.be.equal(0);
+      expect(impressionsQueueAfterRendering.length).to.be.equal(2);
+      expect(impressionsQueueAfterRendering[0].adUnitCode).to.be.equal(AD_UNIT_CODES_MOCK[0]);
+      expect(impressionsQueueAfterRendering[1].adUnitCode).to.be.equal(AD_UNIT_CODES_MOCK[1]);
 
-    expect(addEventListenerStub.callCount).to.be.equal(2);
+      expect(addEventListenerStub.callCount).to.be.equal(2);
 
-    expect(requestAnimationFrameStub.callCount).to.be.equal(0);
+      expect(requestAnimationFrameStub.callCount).to.be.equal(0);
 
-    window.requestAnimationFrame.restore();
-    document.querySelector.restore();
-  });
+      window.requestAnimationFrame.restore();
+      document.querySelector.restore();
+    });
 
-  it('activelyWaitForBannersToRender(), when element is NOT there, it calls requestAnimationFrame', () => {
-    const NOT_AN_IFRAME_MOCK = {};
-    const AD_UNIT_CODES_MOCK = ['adUnitCode1', 'adUnitCode2'];
-    const requestAnimationFrameStub = sinon.stub(window, 'requestAnimationFrame');
-    sinon.stub(document, 'querySelector').returns(NOT_AN_IFRAME_MOCK);
+    it('activelyWaitForBannersToRender(), when element is NOT there, it calls requestAnimationFrame', () => {
+      const NOT_AN_IFRAME_MOCK = {};
+      const AD_UNIT_CODES_MOCK = ['adUnitCode1', 'adUnitCode2'];
+      const requestAnimationFrameStub = sinon.stub(window, 'requestAnimationFrame');
+      sinon.stub(document, 'querySelector').returns(NOT_AN_IFRAME_MOCK);
 
-    const impressionsQueueBeforeRendering = utils.deepClone(analyticsAdapter.context.queue.peekAll());
+      const impressionsQueueBeforeRendering = utils.deepClone(analyticsAdapter.context.queue.peekAll());
 
-    activelyWaitForBannersToRender(AD_UNIT_CODES_MOCK);
+      activelyWaitForBannersToRender(AD_UNIT_CODES_MOCK);
 
-    const impressionsQueueAfterRendering = utils.deepClone(analyticsAdapter.context.queue.peekAll());
+      const impressionsQueueAfterRendering = utils.deepClone(analyticsAdapter.context.queue.peekAll());
 
-    expect(impressionsQueueBeforeRendering.length).to.be.equal(0);
-    expect(impressionsQueueAfterRendering.length).to.be.equal(0);
+      expect(impressionsQueueBeforeRendering.length).to.be.equal(0);
+      expect(impressionsQueueAfterRendering.length).to.be.equal(0);
 
-    expect(requestAnimationFrameStub.callCount).to.be.equal(1);
+      expect(requestAnimationFrameStub.callCount).to.be.equal(1);
 
-    window.requestAnimationFrame.restore();
-    document.querySelector.restore();
+      window.requestAnimationFrame.restore();
+      document.querySelector.restore();
+    });
   });
 
   it('arrayDifference(), returns the full array if the intersection is empty', () => {
