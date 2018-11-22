@@ -175,6 +175,7 @@ function buildBiddersArrayFromAuctionEnd(auctionEndEvent) {
         adomain: [''],
         clearPrice: 0.0,
         impId: bid.adUnitCode,
+        creativeId: bidReceivedForThisRequest ? bidReceivedForThisRequest.creativeId : '',
         price: bidReceivedForThisRequest ? bidReceivedForThisRequest.cpm : 0.0,
         status: 0
       };

@@ -542,44 +542,48 @@ describe('RIVR Analytics adapter', () => {
     expect(result[1].code).to.be.eql('video');
   });
 
-  it('trackAuctionEnd(), populates the bidders array from bidderRequests and bidsReceived', () => {
-    trackAuctionEnd(AUCTION_END_EVENT_WITH_BID_REQUESTS_AND_BID_RESPONSES_MOCK);
+  describe('trackAuctionEnd()', () => {
+    it('populates the bidders array from bidderRequests and bidsReceived', () => {
+      trackAuctionEnd(AUCTION_END_EVENT_WITH_BID_REQUESTS_AND_BID_RESPONSES_MOCK);
 
-    const result = analyticsAdapter.context.auctionObject.bidders;
+      const result = analyticsAdapter.context.auctionObject.bidders;
 
-    expect(result.length).to.be.eql(3);
+      expect(result.length).to.be.eql(3);
 
-    expect(result[0].id).to.be.eql('vuble');
-    expect(result[0].bids[0].price).to.be.eql(0);
+      expect(result[0].id).to.be.eql('vuble');
+      expect(result[0].bids[0].price).to.be.eql(0);
 
-    expect(result[1].id).to.be.eql('vertamedia');
-    expect(result[1].bids[0].price).to.be.eql(0);
+      expect(result[1].id).to.be.eql('vertamedia');
+      expect(result[1].bids[0].price).to.be.eql(0);
 
-    expect(result[2].id).to.be.eql('appnexus');
-    expect(result[2].bids[0].price).to.be.eql(0.5);
-    expect(result[2].bids[0].impId).to.be.eql('/19968336/header-bid-tag-0');
-    expect(result[2].bids[1].price).to.be.eql(0.7);
-    expect(result[2].bids[1].impId).to.be.eql('/19968336/header-bid-tag-1');
-  });
+      expect(result[2].id).to.be.eql('appnexus');
+      expect(result[2].bids[0].price).to.be.eql(0.5);
+      expect(result[2].bids[0].impId).to.be.eql('/19968336/header-bid-tag-0');
+      expect(result[2].bids[0].creativeId).to.be.eql(96846035);
+      expect(result[2].bids[1].price).to.be.eql(0.7);
+      expect(result[2].bids[1].impId).to.be.eql('/19968336/header-bid-tag-1');
+      expect(result[2].bids[1].creativeId).to.be.eql(11223344);
+    });
 
-  it('trackAuctionEnd(), populates the impressions array from adUnits', () => {
-    trackAuctionEnd(AUCTION_END_EVENT_WITH_AD_UNITS_AND_BID_RESPONSES_MOCK);
+    it('populates the impressions array from adUnits', () => {
+      trackAuctionEnd(AUCTION_END_EVENT_WITH_AD_UNITS_AND_BID_RESPONSES_MOCK);
 
-    const result = analyticsAdapter.context.auctionObject.impressions;
+      const result = analyticsAdapter.context.auctionObject.impressions;
 
-    expect(result.length).to.be.eql(3);
+      expect(result.length).to.be.eql(3);
 
-    expect(result[0].id).to.be.eql('/19968336/header-bid-tag-0');
-    expect(result[0].adType).to.be.eql('banner');
+      expect(result[0].id).to.be.eql('/19968336/header-bid-tag-0');
+      expect(result[0].adType).to.be.eql('banner');
 
-    expect(result[1].id).to.be.eql('/19968336/header-bid-tag-1');
-    expect(result[1].adType).to.be.eql('banner');
-    expect(result[1].acceptedSizes).to.be.eql([{w: 728, h: 90}, {w: 970, h: 250}]);
-    expect(result[1].banner).to.be.eql({w: 300, h: 250});
+      expect(result[1].id).to.be.eql('/19968336/header-bid-tag-1');
+      expect(result[1].adType).to.be.eql('banner');
+      expect(result[1].acceptedSizes).to.be.eql([{w: 728, h: 90}, {w: 970, h: 250}]);
+      expect(result[1].banner).to.be.eql({w: 300, h: 250});
 
-    expect(result[2].id).to.be.eql('video');
-    expect(result[2].adType).to.be.eql('video');
-    expect(result[2].acceptedSizes).to.be.eql([{w: 640, h: 360}, {w: 640, h: 480}]);
+      expect(result[2].id).to.be.eql('video');
+      expect(result[2].adType).to.be.eql('video');
+      expect(result[2].acceptedSizes).to.be.eql([{w: 640, h: 360}, {w: 640, h: 480}]);
+    });
   });
 
   it('storeAndReturnRivrUsrIdCookie(), stores rvr_usr_id cookie and returns its value', () => {
@@ -1190,7 +1194,7 @@ describe('RIVR Analytics adapter', () => {
         source: 'client',
         requestId: '7e1a45d85bd57c',
         cpm: 0.7,
-        creativeId: 96846035,
+        creativeId: 11223344,
         appnexus: {
           buyerMemberId: 9325
         },
