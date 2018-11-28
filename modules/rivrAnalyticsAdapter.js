@@ -22,6 +22,9 @@ let rivrAnalytics = Object.assign(adapter({analyticsType}), {
     if (!rivrAnalytics.context) {
       return;
     }
+    if (window.rivraddon) {
+      window.rivraddon.rivrAnalyticsContext = rivrAnalytics.context;
+    }
     logInfo(`ARGUMENTS FOR TYPE: ============= ${eventType}`, args);
     let handler = null;
     switch (eventType) {
@@ -104,16 +107,17 @@ function trackBidWon(args) {
   setWinningBidStatus(args);
 };
 
-function setWinningBidStatus(args) {
+function setWinningBidStatus(event) {
   let auctionObject = rivrAnalytics.context.auctionObject;
   const bidderObjectForThisWonBid = find(auctionObject.bidders, (bidder) => {
-    return bidder.id === args.bidderCode;
+    return bidder.id === event.bidderCode;
   });
   if (bidderObjectForThisWonBid) {
     const bidObjectForThisWonBid = find(bidderObjectForThisWonBid.bids, (bid) => {
-      return bid.impId === args.adUnitCode;
+      return bid.impId === event.adUnitCode;
     });
     if (bidObjectForThisWonBid) {
+      bidObjectForThisWonBid.clearPrice = event.cpm;
       bidObjectForThisWonBid.status = 1;
     }
   }

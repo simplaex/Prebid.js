@@ -186,6 +186,7 @@ describe('RIVR Analytics adapter', () => {
     expect(analyticsAdapter.context.auctionObject.bidders[1].bids[0].status).to.be.equal(0);
 
     expect(analyticsAdapter.context.auctionObject.bidders[2].bids[0].status).to.be.equal(1);
+    expect(analyticsAdapter.context.auctionObject.bidders[2].bids[0].clearPrice).to.be.equal(0.44);
     expect(analyticsAdapter.context.auctionObject.bidders[2].bids[1].status).to.be.equal(0);
   });
 
@@ -734,7 +735,7 @@ describe('RIVR Analytics adapter', () => {
     mediaType: 'banner',
     source: 'client',
     requestId: '63301dc59deb3b',
-    cpm: 0.5,
+    cpm: 0.44,
     creativeId: 98493581,
     currency: 'USD',
     netRevenue: true,
