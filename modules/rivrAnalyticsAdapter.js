@@ -336,23 +336,7 @@ export function createNewAuctionObject() {
   return auction;
 };
 
-export function saveUnoptimisedAdUnits() {
-  let units = rivrAnalytics.context.adUnits;
-  if (units) {
-    if (units.length > 0) {
-      let allUnits = concatAllUnits(units);
-      allUnits.forEach((adUnit) => {
-        adUnit.bids.forEach((bid) => {
-          let configForBidder = fetchConfigForBidder(bid.bidder);
-          if (configForBidder) {
-            let unOptimisedParamsField = createUnOptimisedParamsField(bid, configForBidder);
-            rivrAnalytics.context.auctionObject['ext.rivr.originalvalues'].push(unOptimisedParamsField);
-          }
-        })
-      });
-    }
-  }
-};
+export function saveUnoptimisedAdUnits() {};
 
 export function concatAllUnits(units) {
   return Array.prototype.concat.apply([], units);
@@ -370,17 +354,6 @@ export function createUnOptimisedParamsField(bid, config) {
   }
 }
 
-function fetchConfigForBidder(bidderName) {
-  let config = localStorage.getItem('rivr_config_string');
-  if (config) {
-    let parsed = JSON.parse(config);
-    return parsed.demand.map((bidderConfig) => {
-      if (bidderName === bidderConfig.partner) {
-        return bidderConfig
-      };
-    })[0];
-  }
-}
 /**
  * Expiring queue implementation. Fires callback on elapsed timeout since last last update or creation.
  * @param callback
