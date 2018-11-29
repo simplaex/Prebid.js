@@ -23,7 +23,8 @@ let rivrAnalytics = Object.assign(adapter({analyticsType}), {
       return;
     }
     if (window.rivraddon) {
-      window.rivraddon.rivrAnalyticsContext = rivrAnalytics.context;
+      console.log('analytics rivraddon IS THERE');
+      window.rivraddon.analytics.context = rivrAnalytics.context;
     }
     logInfo(`ARGUMENTS FOR TYPE: ============= ${eventType}`, args);
     let handler = null;
@@ -99,8 +100,7 @@ export function sendImpressions() {
 };
 
 function trackAuctionInit(args) {
-  rivrAnalytics.context.auctionTimeStart = Date.now();
-  rivrAnalytics.context.auctionObject.id = args.auctionId;
+  window.rivraddon.analytics.trackAuctionInit(args);
 };
 
 function trackBidWon(args) {
