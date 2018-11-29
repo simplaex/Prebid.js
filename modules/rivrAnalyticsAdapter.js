@@ -10,12 +10,6 @@ const rivrUsrIdCookieKey = 'rvr_usr_id';
 const DEFAULT_HOST = 'tracker.rivr.simplaex.com';
 const DEFAULT_QUEUE_TIMEOUT = 4000;
 const ADS_RENDERING_TIMEOUT = 10000;
-const RIVR_CONSTANTS = {
-  ADSERVER: {
-    NONE: 'none',
-    DFP: 'DFP',
-  }
-}
 
 let rivrAnalytics = Object.assign(adapter({analyticsType}), {
   track({ eventType, args }) {
@@ -263,14 +257,7 @@ export function activelyWaitForBannersToRender(adUnitCodesOfNotYetRenderedBanner
   function goThroughNotYetRenderedAds() {
     if (adUnitCodesOfNotYetRenderedBanners.length) {
       adUnitCodesOfNotYetRenderedBanners.forEach((bannerAdUnitCode) => {
-        switch (rivrAnalytics.context.adServer) {
-          case RIVR_CONSTANTS.ADSERVER.NONE:
-            searchForSimpleBanners(bannerAdUnitCode, adUnitCodesOfRenderedBanners);
-            break;
-          case RIVR_CONSTANTS.ADSERVER.DFP:
-            seaschForDFPBanners(bannerAdUnitCode, adUnitCodesOfRenderedBanners);
-            break;
-        }
+        searchForBannersInIframe(bannerAdUnitCode, adUnitCodesOfRenderedBanners);
       });
 
       if (keepCheckingForAdsRendering && arrayDifference(adUnitCodesOfNotYetRenderedBanners, adUnitCodesOfRenderedBanners).length) {
@@ -282,7 +269,7 @@ export function activelyWaitForBannersToRender(adUnitCodesOfNotYetRenderedBanner
   goThroughNotYetRenderedAds();
 };
 
-function seaschForDFPBanners(bannerAdUnitCode, adUnitCodesOfRenderedBanners) {
+function searchForBannersInIframe(bannerAdUnitCode, adUnitCodesOfRenderedBanners) {
   const foundIframe = document.querySelector(`iframe[id*="${bannerAdUnitCode}"]`);
   if (foundIframe && foundIframe.contentDocument) {
     const foundImg = foundIframe.contentDocument.querySelector('a img');
@@ -291,15 +278,6 @@ function seaschForDFPBanners(bannerAdUnitCode, adUnitCodesOfRenderedBanners) {
       foundIframe.contentDocument.addEventListener('click', handleClickEventWithClosureScope(bannerAdUnitCode));
       adUnitCodesOfRenderedBanners.push(bannerAdUnitCode);
     }
-  }
-}
-
-function searchForSimpleBanners(bannerAdUnitCode, adUnitCodesOfRenderedBanners) {
-  const foundImg = document.querySelector(`[id*="${bannerAdUnitCode}"] a img`);
-  if (foundImg && foundImg.height > 1 && foundImg.width > 1) {
-    handleImpression(bannerAdUnitCode);
-    foundImg.addEventListener('click', handleClickEventWithClosureScope(bannerAdUnitCode));
-    adUnitCodesOfRenderedBanners.push(bannerAdUnitCode);
   }
 }
 
