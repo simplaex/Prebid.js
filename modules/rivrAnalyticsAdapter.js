@@ -14,19 +14,18 @@ let rivrAnalytics = Object.assign(adapter({analyticsType}), {
     }
     utils.logInfo(`ARGUMENTS FOR TYPE: ============= ${eventType}`, args);
     let handler = null;
-    switch (eventType) {
-      case CONSTANTS.EVENTS.AUCTION_INIT:
-        handler = trackAuctionInit;
-        break;
-      case CONSTANTS.EVENTS.AUCTION_END:
-        handler = trackAuctionEnd;
-        break;
-      case CONSTANTS.EVENTS.BID_WON:
-        handler = trackBidWon;
-        break;
-      case CONSTANTS.EVENTS.BID_TIMEOUT:
-        handler = trackBidTimeout;
-        break;
+    if (window.rivraddon && window.rivraddon.analytics) {
+      switch (eventType) {
+        case CONSTANTS.EVENTS.AUCTION_INIT:
+          handler = window.rivraddon.analytics.trackAuctionInit;
+          break;
+        case CONSTANTS.EVENTS.AUCTION_END:
+          handler = window.rivraddon.analytics.trackAuctionEnd;
+          break;
+        case CONSTANTS.EVENTS.BID_WON:
+          handler = window.rivraddon.analytics.trackBidWon;
+          break;
+      }
     }
     if (handler) {
       handler(args)
@@ -34,75 +33,6 @@ let rivrAnalytics = Object.assign(adapter({analyticsType}), {
   }
 });
 
-function trackAuctionInit(args) {
-  window.rivraddon.analytics.trackAuctionInit(args);
-};
-
-function trackBidWon(args) {
-  setWinningBidStatus(args);
-};
-
-function setWinningBidStatus(event) {
-  let auctionObject = rivrAnalytics.context.auctionObject;
-  const bidderObjectForThisWonBid = find(auctionObject.bidders, (bidder) => {
-    return bidder.id === event.bidderCode;
-  });
-  if (bidderObjectForThisWonBid) {
-    const bidObjectForThisWonBid = find(bidderObjectForThisWonBid.bids, (bid) => {
-      return bid.impId === event.adUnitCode;
-    });
-    if (bidObjectForThisWonBid) {
-      bidObjectForThisWonBid.clearPrice = event.cpm;
-      bidObjectForThisWonBid.status = 1;
-    }
-  }
-};
-
-export function trackAuctionEnd(args) {
-  window.rivraddon.analytics.trackAuctionEnd(args);
-};
-
-function trackBidTimeout(args) {
-  return [args];
-};
-
-// Using closure in order to reference adUnitCode inside the event handler.
-export function handleClickEventWithClosureScope(adUnitCode) {
-  return function (event) {
-    const clickEventPayload = createNewBasicEvent(adUnitCode);
-    let link = event.currentTarget.getElementsByTagName('a')[0];
-    if (link) {
-      clickEventPayload.clickUrl = link.getAttribute('href');
-    }
-
-    utils.logInfo('Sending click events with parameters: ', clickEventPayload);
-    ajax(
-      `http://${rivrAnalytics.context.host}/${rivrAnalytics.context.clientID}/clicks`,
-      () => {},
-      JSON.stringify(clickEventPayload),
-      {
-        contentType: 'application/json',
-        customHeaders: {
-          'Authorization': 'Basic ' + rivrAnalytics.context.authToken
-        }
-      }
-    );
-  };
-}
-
-function createNewBasicEvent(adUnitCode) {
-  return {
-    timestamp: new Date().toISOString(),
-    auctionId: rivrAnalytics.context.auctionObject.id,
-    adUnitCode
-  }
-}
-
-export function handleImpression(adUnitCode) {
-  if (rivrAnalytics.context.queue) {
-    rivrAnalytics.context.queue.push(createNewBasicEvent(adUnitCode));
-  }
-}
 /**
  * Expiring queue implementation. Fires callback on elapsed timeout since last last update or creation.
  * @param callback
@@ -156,7 +86,7 @@ rivrAnalytics.originEnableAnalytics = rivrAnalytics.enableAnalytics;
 
 // override enableAnalytics so we can get access to the config passed in from the page
 rivrAnalytics.enableAnalytics = (config) => {
-  window.rivraddon.analytics.enableAnalytics(config, utils, ajax, ExpiringQueue);
+  window.rivraddon.analytics.enableAnalytics(config, ExpiringQueue, {utils, ajax, find});
   rivrAnalytics.originEnableAnalytics(config);
 };
 
