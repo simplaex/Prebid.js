@@ -9,23 +9,21 @@ const analyticsType = 'endpoint';
 
 let rivrAnalytics = Object.assign(adapter({analyticsType}), {
   track({ eventType, args }) {
-    if (!window.rivraddon.analytics.getContext()) {
+    if (!window.rivraddon || !window.rivraddon.analytics || !window.rivraddon.analytics.getContext()) {
       return;
     }
     utils.logInfo(`ARGUMENTS FOR TYPE: ============= ${eventType}`, args);
     let handler = null;
-    if (window.rivraddon && window.rivraddon.analytics) {
-      switch (eventType) {
-        case CONSTANTS.EVENTS.AUCTION_INIT:
-          handler = window.rivraddon.analytics.trackAuctionInit;
-          break;
-        case CONSTANTS.EVENTS.AUCTION_END:
-          handler = window.rivraddon.analytics.trackAuctionEnd;
-          break;
-        case CONSTANTS.EVENTS.BID_WON:
-          handler = window.rivraddon.analytics.trackBidWon;
-          break;
-      }
+    switch (eventType) {
+      case CONSTANTS.EVENTS.AUCTION_INIT:
+        handler = window.rivraddon.analytics.trackAuctionInit;
+        break;
+      case CONSTANTS.EVENTS.AUCTION_END:
+        handler = window.rivraddon.analytics.trackAuctionEnd;
+        break;
+      case CONSTANTS.EVENTS.BID_WON:
+        handler = window.rivraddon.analytics.trackBidWon;
+        break;
     }
     if (handler) {
       handler(args)
