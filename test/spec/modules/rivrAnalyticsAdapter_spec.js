@@ -120,11 +120,9 @@ describe('RIVR Analytics adapter', () => {
     expect(firstArgument.provider).to.be.equal('rivr');
 
     expect(typeof secondArgument).to.be.equal('function');
-    expect(secondArgument.name).to.be.equal('ExpiringQueue');
 
     expect(thirdArgument).to.have.property('utils');
     expect(thirdArgument).to.have.property('ajax');
-    expect(thirdArgument).to.have.property('find');
   });
 
   it('Firing an event when rivraddon context is not defined it should do nothing', () => {

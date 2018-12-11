@@ -1,6 +1,5 @@
 import {ajax} from 'src/ajax';
 import adapter from 'src/AnalyticsAdapter';
-import find from 'core-js/library/fn/array/find';
 import CONSTANTS from 'src/constants.json';
 import adaptermanager from 'src/adaptermanager';
 import * as utils from 'src/utils';
@@ -84,7 +83,7 @@ rivrAnalytics.originEnableAnalytics = rivrAnalytics.enableAnalytics;
 // override enableAnalytics so we can get access to the config passed in from the page
 rivrAnalytics.enableAnalytics = (config) => {
   if (window.rivraddon && window.rivraddon.analytics) {
-    window.rivraddon.analytics.enableAnalytics(config, ExpiringQueue, {utils, ajax, find});
+    window.rivraddon.analytics.enableAnalytics(config, ExpiringQueue, {utils, ajax});
     rivrAnalytics.originEnableAnalytics(config);
   }
 };
