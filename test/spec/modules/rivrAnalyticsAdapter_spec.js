@@ -2,7 +2,6 @@ import * as utils from 'src/utils';
 import analyticsAdapter from 'modules/rivrAnalyticsAdapter';
 import {
   ExpiringQueue,
-  sendAuction,
   sendImpressions,
   handleClickEventWithClosureScope,
   createUnOptimisedParamsField,
@@ -96,12 +95,8 @@ describe('RIVR Analytics adapter', () => {
       expect(Date.now()).to.be.equal(200);
       done();
     };
-    const sendAuctionMock = () => {};
 
-    let queue = new ExpiringQueue(
-      sendImpressionMock,
-      sendAuctionMock,
-      EXPIRING_QUEUE_TIMEOUT_MOCK);
+    let queue = new ExpiringQueue(sendImpressionMock, EXPIRING_QUEUE_TIMEOUT_MOCK);
 
     queue.push(1);
 

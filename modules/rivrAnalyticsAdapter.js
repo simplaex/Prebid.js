@@ -37,7 +37,7 @@ let rivrAnalytics = Object.assign(adapter({analyticsType}), {
  * @param ttl
  * @constructor
  */
-export function ExpiringQueue(sendImpressions, sendAuction, ttl, log) {
+export function ExpiringQueue(sendImpressions, ttl, log) {
   let queue = [];
   let timeoutId;
 
@@ -71,7 +71,6 @@ export function ExpiringQueue(sendImpressions, sendAuction, ttl, log) {
       clearTimeout(timeoutId);
     }
     timeoutId = setTimeout(() => {
-      sendAuction();
       if (queue.length) {
         sendImpressions();
       }
